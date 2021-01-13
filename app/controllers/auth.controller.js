@@ -1,0 +1,271 @@
+const db = require("../models");
+const config = require("../config/auth.config");
+const User = db.user;
+const EmailVerification = db.emailVerification;
+const validateRegisterInput = require("../validations/register.validation");
+const validateLoginInput = require("../validations/login.validation");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const sendMail = require("../utils/email");
+const makeMailFromTemplate = require("../utils/email/mailTemplate");
+
+/**
+ * AdminUser Register
+ * @param req keys: {name, email, password, confirmPassword, type}
+ * @param res
+ * @returns {token}
+ */
+exports.register = async (req, res) => {
+    const {msg, isValid} = validateRegisterInput(req.body);
+    if (!isValid) {
+        return res.status(400).json({msg: msg});
+    }
+
+    try {
+        const user = await User.findOne({where: {email: req.body.email.toLowerCase()}});
+        if (user) {
+            return res.status(400).json({msg: ["AUTH.VALIDATION.EMAIL_DUPLICATED"]});
+        }
+
+        const newUser = {
+            name: req.body.name,
+            email: req.body.email.toLowerCase(),
+            type: req.body.type,
+            createdDate: new Date(),
+        }
+
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(req.body.password, salt, (err, hash) => {
+                if (err) throw err;
+                newUser.password = hash;
+                User.create(newUser)
+                    .then(async user => {
+                        const device = req.body.device || '';
+                        const token = await generateToken(user, device);
+                        return res.status(200).json({accessToken: token});
+                    })
+                    .catch(err => {
+                        return res.status(500).json({msg: [err.toString()]});
+                    });
+            });
+        });
+    } catch (err) {
+        return res.status(500).json({msg: [err.toString()]});
+    }
+};
+
+/**
+ * AdminUser Login
+ * @param req keys: {email, password}
+ * @param res
+ * @returns {token}
+ */
+exports.login = async (req, res) => {
+    const {msg, isValid} = validateLoginInput(req.body);
+
+    if (!isValid) {
+        return res.status(400).json({msg: msg});
+    }
+
+    const device = req.body.device || '';
+
+    try {
+        const user = await User.findOne({where: {email: req.body.email.toLowerCase()}});
+
+        if (user) {
+            bcrypt.compare(req.body.password, user.password).then(async isMatch => {
+                if (isMatch) {
+                    const token = await generateToken(user, device);
+                    return res.status(200).json({accessToken: token});
+                } else {
+                    return res.status(400).json({msg: ["AUTH.VALIDATION.PASSWORD_WRONG"]});
+                }
+            }).catch(err => res.status(500).json({msg: err.toString()}));
+        } else {
+            return res.status(404).json({msg: ["AUTH.VALIDATION.EMAIL_NOT_FOUND"]});
+        }
+    } catch (err) {
+        return res.status(400).json(err);
+    }
+};
+
+async function generateToken(user, device) {
+    const payload = {
+        id: user.id,
+        name: user.name,
+        email: user.email.toLowerCase(),
+        createdAt: user.createdDate,
+        device: device,
+    };
+
+    // Sign token
+    return await jwt.sign(
+        payload,
+        config.SECRET_KEY,
+        {
+            expiresIn: 31556926 // 1 year in seconds
+        },
+    );
+}
+
+const generateCode = (length) => {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+};
+
+/**
+ * Sending a verification code for email verification
+ * @param req keys: {email}
+ * @param res
+ */
+exports.forgotPassword = (req, res) => {
+    User.findOne({
+        where: {email: req.body.email.toLowerCase()}
+    }).then(async (user) => {
+        if (!user) {
+            return res.status(404).send({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
+        }
+
+        const userId = user.id;
+        const verifyCode = await generateCode(6);
+
+        const data = {
+            userId: userId,
+            code: verifyCode,
+            updatedDate: new Date(),
+        }
+
+        console.log('data: ', data)
+
+        const info = await EmailVerification.findOne({
+            where: {userId: userId}
+        });
+
+        if (info) {
+            await EmailVerification.update(data, {
+                where: {userId: userId}
+            });
+        } else {
+            await EmailVerification.create(data);
+        }
+
+        sendMail(
+            res,
+            user.email,
+            user.name,
+            user.id,
+            'You requested to reset your password.',
+            makeMailFromTemplate({
+                header: `안녕하세요, ${user.name}님`,
+                title: '인증코드전송',
+                content: '이메일인증을 위해 아래의 인증코드를 리용하세요.',
+                value: verifyCode,
+                extra: '',
+            })
+        );
+
+    }).catch(err => {
+        return res.status(500).send({message: err.message});
+    });
+};
+
+/**
+ * Verify the verification code
+ * @param req keys: {userId, code}
+ * @param res
+ * @returns {Promise<void>}
+ */
+exports.verifyCode = async (req, res) => {
+    console.log('userAId: ', req.body.userId)
+    try {
+        const now = new Date();
+        const info = await EmailVerification.findOne({
+            where: {userId: req.body.userId}
+        });
+
+        if (req.body.code === '') {
+            return res.status(400).send({msg: 'AUTH.VALIDATION.REQUIRED_CODE'});
+        } else if (now - info.updatedDate > config.PENDING_EXPIRATION) {
+            return res.status(400).send({msg: 'AUTH.VERIFY_CODE_EXPIRED'});
+        } else if (info.code !== req.body.code) {
+            return res.status(400).send({msg: 'AUTH.VERIFY_CODE_INCORRECT'});
+        } else {
+            return res.status(200).send({result: 'AUTH.VERIFY_CODE_SUCCESS'});
+        }
+    } catch (err) {
+        return res.status(500).send({message: err.message});
+    }
+};
+
+/**
+ * Change password
+ * @param req keys: {email, newPassword}
+ * @param res
+ * @returns {Promise<any>}
+ */
+exports.changePassword = async (req, res) => {
+    const newPassword = req.body.newPassword;
+
+    try {
+        const user = await User.findOne({
+            where: {email: req.body.email.toLowerCase()}
+        });
+
+        if (!user) {
+            return res.status(404).send({msg: 'AUTH.VALIDATION.EMAIL_NOT_FOUND'});
+        } else {
+            bcrypt.genSalt(10, (err, salt) => {
+                bcrypt.hash(newPassword, salt, (err, hash) => {
+                    if (err) throw err;
+                    user.password = hash;
+                    user.updatedDate = new Date();
+                    user.save();
+                    return res.status(200).send({msg_reset: 'AUTH.RESET_PASSWORD_SUCCESS'});
+                });
+            });
+        }
+    } catch (err) {
+        return res.status(500).send({msg: err.message});
+    }
+}
+
+/**
+ * Check if the email was used
+ * @param req keys: {email}
+ * @param res
+ */
+exports.checkEmail = (req, res) => {
+    User.findOne({
+        where: {
+            email: req.body.email.toLowerCase()
+        }
+    }).then(user => {
+        const result = user ? 'USED_EMAIL' : 'UNUSED_EMAIL';
+        return res.status(200).send({result});
+    }).catch(err => {
+        return res.status(500).send({msg: err.message});
+    })
+}
+
+/**
+ * Get adminUser Info by userId
+ * @param req keys: {userId}
+ * @param res
+ */
+exports.getUserInfo = (req, res) => {
+    User.findOne({
+        where: {id: req.body.userId},
+        attributes: {exclude: 'password'}
+    })
+        .then(user => {
+            return res.status(200).json({result: user});
+        })
+        .catch(err => {
+            return res.status(400).json({msg: err.toString()});
+        });
+};
