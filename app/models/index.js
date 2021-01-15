@@ -42,6 +42,7 @@ db.profile = require("./profile.model")(sequelize, Sequelize);
 db.question = require("./question.model")(sequelize, Sequelize);
 db.quickMemo = require("./quickMemo.model")(sequelize, Sequelize);
 db.report = require("./report.model")(sequelize, Sequelize);
+db.style = require("./style.model")(sequelize, Sequelize);
 db.term = require("./terms.model")(sequelize, Sequelize);
 db.user = require("./user.model")(sequelize, Sequelize);
 db.withdrawal = require("./withdrawal.model")(sequelize, Sequelize);

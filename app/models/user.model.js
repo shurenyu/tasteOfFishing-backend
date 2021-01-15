@@ -1,7 +1,7 @@
 module.exports = (sequelize, Sequelize) => {
     return sequelize.define("user", {
         type: {
-            type: Sequelize.INTEGER(1)
+            type: Sequelize.INTEGER(2)
         },
         name: {
             type: Sequelize.STRING(100)
@@ -11,6 +11,10 @@ module.exports = (sequelize, Sequelize) => {
         },
         password: {
             type: Sequelize.STRING(256)
+        },
+        active: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: false,
         },
         createdDate: {
             type: Sequelize.DATE,

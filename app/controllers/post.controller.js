@@ -20,15 +20,27 @@ exports.registerPost = (req, res) => {
         })
 };
 
-exports.getPostByUser = (req, res) => {
-    const userId = req.body.userId;
-    Post.findAll({
-        where: {userId: userId}
-    }).then((data) => {
-        return res.status(200).send({result: data});
-    }).catch(err => {
+exports.getPostByUser = async (req, res) => {
+    try {
+        const userId = req.body.userId;
+        console.log("userId: ", userId)
+
+        const count = await Post.count({
+            where: {userId: userId}
+        });
+        console.log('count: ', count)
+
+        const data = await Post.findAll({
+            limit: req.body.limit || 1000000,
+            offset: req.body.offset || 0,
+            where: {userId: userId}
+        })
+        console.log(data.data)
+
+        return res.status(200).send({result: data, totalCount: count});
+    } catch (err) {
         return res.status(200).send({msg: err.toString()});
-    })
+    }
 };
 
 exports.getPostById = (req, res) => {

@@ -29,6 +29,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/user/profile/get-by-user",
+        [authJwt.verifyToken],
+        controller.getProfileByUserId
+    );
+
+    app.all(
         "/user/get-all",
         [authJwt.verifyToken],
         controller.getAllUsers
@@ -38,6 +44,12 @@ module.exports = function (app) {
         "/user/get-by-id",
         [authJwt.verifyToken],
         controller.getUserById
+    );
+
+    app.all(
+        "/user/get-full-info",
+        [authJwt.verifyToken],
+        controller.getFullUserInfo
     );
 
     app.all(

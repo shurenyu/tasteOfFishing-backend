@@ -1,16 +1,28 @@
 const config = require("../../config/auth.config")
-const nodemailer = require("nodemailer");
+const nodeMailer = require("nodemailer");
 const mailConfig = {
+    service: 'gmail',
+    port: 587,
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    secure: false,
+    requireTLS: true,
     auth: {
         user: 'connectzero.dev@gmail.com',
-        pass: 'zjwp123!!'
+        pass: 'tastefish123!!'
     }
 };
 
-const transporter = nodemailer.createTransport(mailConfig);
+const testMailConfig = {
+    host: 'smtp.ethereal.email',
+    port: 587,
+    auth: {
+        user: 'graham.jones75@ethereal.email',
+        pass: 'XRaqpZNjGMxfGGmbWy'
+    }
+};
+
+// const transporter = nodeMailer.createTransport(mailConfig);
+const transporter = nodeMailer.createTransport(testMailConfig);
 
 const sendMail = (res, to, user_name, userId, subject, content) => {
     transporter.sendMail({
@@ -21,6 +33,7 @@ const sendMail = (res, to, user_name, userId, subject, content) => {
         html: content
     }, function (err, info) {
         if (err) {
+            console.log('errMessage: ', err.toString())
             return res.status(500).send({msg: "AUTH.ERROR", err: err.toString()});
         } else {
             return res.status(200).json({

@@ -1,8 +1,8 @@
 module.exports = {
-	HOST: "ma13-reffy.mobilapp.nu",
-	USER: "ma13reffy",
-	PASSWORD: "T2mp?53u",
-	DB: "ma13reffy",
+	HOST: "54.180.210.166",
+	USER: "fishing_user",
+	PASSWORD: "fishing_password",
+	DB: "fishing_db",
 	dialect: "mysql",
 	pool: {
 		max: 5,

@@ -66,14 +66,35 @@ exports.getProfileById = (req, res) => {
     })
 };
 
-exports.getAllUsers = (req, res) => {
-    User.findAll({
-        attributes: ['id', 'name', 'email', 'type', 'createdDate']
+exports.getProfileByUserId = (req, res) => {
+    const userId = req.body.userId;
+
+    Profile.findOne({
+        where: {userId: userId}
     }).then(data => {
         return res.status(200).send({result: data});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
+};
+
+exports.getAllUsers = async (req, res) => {
+    try {
+        const userCount = await User.count({
+            where: {type: 1}
+        });
+
+        const users = await User.findAll({
+            limit: req.body.limit || 1000000,
+            offset: req.body.offset || 0,
+            where: {type: 1},
+            attributes: {exclude: ['password']},
+        });
+
+        return res.status(200).send({result: users, totalCount: userCount});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
 }
 
 exports.getUserById = (req, res) => {
@@ -81,6 +102,22 @@ exports.getUserById = (req, res) => {
 
     User.findOne({
         where: {id: userId}
+    }).then(data => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(200).send({msg: err.toString()});
+    })
+}
+
+exports.getFullUserInfo = (req, res) => {
+    const userId = req.body.userId;
+
+    User.findOne({
+        where: {id: userId},
+        attributes: {exclude: ['password']},
+        include: [{
+            model: Profile,
+        }]
     }).then(data => {
         return res.status(200).send({result: data});
     }).catch(err => {

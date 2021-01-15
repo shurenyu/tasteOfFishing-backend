@@ -9,6 +9,77 @@ const bcrypt = require("bcryptjs");
 const sendMail = require("../utils/email");
 const makeMailFromTemplate = require("../utils/email/mailTemplate");
 
+
+const generateToken = async (user) => {
+    const payload = {
+        id: user.id,
+        name: user.name,
+        email: user.email.toLowerCase(),
+        createdAt: user.createdDate,
+    };
+
+    // Sign token
+    return await jwt.sign(
+        payload,
+        config.SECRET_KEY,
+        {
+            expiresIn: 31556926 // 1 year in seconds
+        },
+    );
+}
+
+const generateCode = (length) => {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+};
+
+const sendCode = async (user, res) => {
+    const userId = user.id;
+    const verifyCode = await generateCode(6);
+
+    const data = {
+        userId: userId,
+        code: verifyCode,
+        updatedDate: new Date(),
+    }
+
+    console.log('data: ', data)
+
+    const info = await EmailVerification.findOne({
+        where: {userId: userId}
+    });
+
+    if (info) {
+        await EmailVerification.update(data, {
+            where: {userId: userId}
+        });
+    } else {
+        await EmailVerification.create(data);
+    }
+
+    sendMail(
+        res,
+        user.email,
+        user.name,
+        user.id,
+        'You requested to reset your password.',
+        makeMailFromTemplate({
+            header: `안녕하세요, ${user.name}님`,
+            title: '인증코드전송',
+            content: '이메일인증을 위해 아래의 인증코드를 리용하세요.',
+            value: verifyCode,
+            extra: '',
+        })
+    );
+
+}
+
+
 /**
  * AdminUser Register
  * @param req keys: {name, email, password, confirmPassword, type}
@@ -31,8 +102,9 @@ exports.register = async (req, res) => {
             name: req.body.name,
             email: req.body.email.toLowerCase(),
             type: req.body.type,
+            active: false,
             createdDate: new Date(),
-        }
+        };
 
         bcrypt.genSalt(10, (err, salt) => {
             bcrypt.hash(req.body.password, salt, (err, hash) => {
@@ -40,9 +112,10 @@ exports.register = async (req, res) => {
                 newUser.password = hash;
                 User.create(newUser)
                     .then(async user => {
-                        const device = req.body.device || '';
-                        const token = await generateToken(user, device);
-                        return res.status(200).json({accessToken: token});
+                        await sendCode(user, res);
+                        // const device = req.body.device || '';
+                        // const token = await generateToken(user);
+                        // return res.status(200).json({accessToken: token});
                     })
                     .catch(err => {
                         return res.status(500).json({msg: [err.toString()]});
@@ -75,7 +148,7 @@ exports.login = async (req, res) => {
         if (user) {
             bcrypt.compare(req.body.password, user.password).then(async isMatch => {
                 if (isMatch) {
-                    const token = await generateToken(user, device);
+                    const token = await generateToken(user);
                     return res.status(200).json({accessToken: token});
                 } else {
                     return res.status(400).json({msg: ["AUTH.VALIDATION.PASSWORD_WRONG"]});
@@ -87,35 +160,6 @@ exports.login = async (req, res) => {
     } catch (err) {
         return res.status(400).json(err);
     }
-};
-
-async function generateToken(user, device) {
-    const payload = {
-        id: user.id,
-        name: user.name,
-        email: user.email.toLowerCase(),
-        createdAt: user.createdDate,
-        device: device,
-    };
-
-    // Sign token
-    return await jwt.sign(
-        payload,
-        config.SECRET_KEY,
-        {
-            expiresIn: 31556926 // 1 year in seconds
-        },
-    );
-}
-
-const generateCode = (length) => {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
 };
 
 /**
@@ -130,45 +174,7 @@ exports.forgotPassword = (req, res) => {
         if (!user) {
             return res.status(404).send({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
         }
-
-        const userId = user.id;
-        const verifyCode = await generateCode(6);
-
-        const data = {
-            userId: userId,
-            code: verifyCode,
-            updatedDate: new Date(),
-        }
-
-        console.log('data: ', data)
-
-        const info = await EmailVerification.findOne({
-            where: {userId: userId}
-        });
-
-        if (info) {
-            await EmailVerification.update(data, {
-                where: {userId: userId}
-            });
-        } else {
-            await EmailVerification.create(data);
-        }
-
-        sendMail(
-            res,
-            user.email,
-            user.name,
-            user.id,
-            'You requested to reset your password.',
-            makeMailFromTemplate({
-                header: `안녕하세요, ${user.name}님`,
-                title: '인증코드전송',
-                content: '이메일인증을 위해 아래의 인증코드를 리용하세요.',
-                value: verifyCode,
-                extra: '',
-            })
-        );
-
+        await sendCode(user, res);
     }).catch(err => {
         return res.status(500).send({message: err.message});
     });
@@ -181,7 +187,6 @@ exports.forgotPassword = (req, res) => {
  * @returns {Promise<void>}
  */
 exports.verifyCode = async (req, res) => {
-    console.log('userAId: ', req.body.userId)
     try {
         const now = new Date();
         const info = await EmailVerification.findOne({
@@ -201,6 +206,39 @@ exports.verifyCode = async (req, res) => {
         return res.status(500).send({message: err.message});
     }
 };
+
+exports.verifyCodeAndSignUp = async (req, res) => {
+    console.log('userAId: ', req.body.userId)
+    try {
+        const now = new Date();
+        const info = await EmailVerification.findOne({
+            where: {userId: req.body.userId}
+        });
+
+        if (req.body.code === '') {
+            return res.status(400).send({msg: 'AUTH.VALIDATION.REQUIRED_CODE'});
+        } else if (now - info.updatedDate > config.PENDING_EXPIRATION) {
+            return res.status(400).send({msg: 'AUTH.VERIFY_CODE_EXPIRED'});
+        } else if (info.code !== req.body.code) {
+            return res.status(400).send({msg: 'AUTH.VERIFY_CODE_INCORRECT'});
+        } else {
+            const user = await User.findOne({
+                where: {
+                    id: req.body.userId,
+                }
+            });
+
+            user.active = true;
+            await user.save();
+
+            const token = await generateToken(user);
+
+            return res.status(200).send({result: 'AUTH.VERIFY_CODE_SUCCESS', accessToken: token});
+        }
+    } catch (err) {
+        return res.status(500).send({message: err.message});
+    }
+}
 
 /**
  * Change password

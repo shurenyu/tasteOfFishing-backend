@@ -30,6 +30,11 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/auth/verify-code-and-sign-up",
+        controller.verifyCodeAndSignUp
+    )
+
+    app.all(
         "/auth/change-password",
         controller.changePassword
     );
