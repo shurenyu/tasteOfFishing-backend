@@ -1,8 +1,7 @@
 module.exports = {
-	// HOST: "54.180.210.166",
-	HOST: "127.0.0.1",
+	HOST: "54.180.210.166",
 	USER: "fishing_user",
-	PASSWORD: "fishing_password",
+	PASSWORD: "20191129aA!",
 	DB: "fishing_db",
 	dialect: "mysql",
 	pool: {
