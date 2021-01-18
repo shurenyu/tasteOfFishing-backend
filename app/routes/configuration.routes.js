@@ -33,4 +33,10 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.getFishTypeById
     );
+
+    app.all(
+        "/fish-type/delete",
+        [authJwt.verifyToken],
+        controller.deleteFishType
+    );
 };

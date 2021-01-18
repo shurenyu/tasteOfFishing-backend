@@ -57,4 +57,10 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.getQuestCompetitions
     );
+
+    app.all(
+        "/competition/get-competition-by-multi-filter",
+        [authJwt.verifyToken],
+        controller.getCompetitionByMultiFilter
+    );
 };

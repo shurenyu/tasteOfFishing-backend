@@ -9,7 +9,7 @@ exports.registerFishType = (req, res) => {
 
     FishType.create(data)
         .then(data => {
-            return res.status(200).send({result: 'FISH_TYPE_REGISTER_SUCCESS'});
+            return res.status(200).send({result: data, message: 'FISH_TYPE_REGISTER_SUCCESS'});
         })
         .catch(err => {
             return res.status(200).send({msg: err.toString()});

@@ -1,7 +1,7 @@
 module.exports = (sequelize, Sequelize) => {
     return sequelize.define("competition", {
         type: {
-            type: Sequelize.INTEGER(21)
+            type: Sequelize.STRING(10)
         },
         name: {
             type: Sequelize.STRING(256)
@@ -30,7 +30,7 @@ module.exports = (sequelize, Sequelize) => {
         duplicateAllow: {
             type: Sequelize.BOOLEAN
         },
-        totalPoint: {
+        totalReward: {
             type: Sequelize.INTEGER(20)
         },
         fishTypeId: {

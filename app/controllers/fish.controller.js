@@ -5,6 +5,7 @@ const Competition = db.competition;
 const FishImage = db.fishImage;
 const User = db.user;
 const Profile = db.profile;
+const FishType = db.fishType;
 const Op = db.Sequelize.Op;
 
 exports.commitFish = (req, res) => {
@@ -56,6 +57,7 @@ exports.registerCheckedFish = async (req, res) => {
 
         fish.fishTypeId = req.body.fishTypeId;
         fish.fishWidth = req.body.fishWidth;
+        fish.status = 1;
         fish.registerDate = new Date();
 
         await fish.save();
@@ -75,38 +77,40 @@ exports.registerCheckedFish = async (req, res) => {
             }
         });
 
-        if (competition.mode === 0) {
-            const diaryFishes = await Fish.findAll({
-                limit: competition.rankFishNumber,
-                order: [['fishWidth', 'DESC']]
-            });
+        if (diary !== null) {
+            if (competition.mode === 0) {
+                const diaryFishes = await Fish.findAll({
+                    limit: competition.rankFishNumber,
+                    order: [['fishWidth', 'DESC']]
+                });
 
-            let newRecord0 = 0;
-            for (const fish of diaryFishes) {
-                newRecord0 += fish.fishWidth;
-            }
+                let newRecord0 = 0;
+                for (const fish of diaryFishes) {
+                    newRecord0 += fish.fishWidth;
+                }
 
-            diary.record0 = newRecord0;
-            await diary.save();
-        } else if (competition.mode === 1) {
-            const diaryFish = await Fish.findOne({
-                order: [['fishWidth', 'DESC']]
-            });
-
-            diary.record1 = diaryFish.fishWidth;
-            await diary.save();
-        } else if (competition.mode === 2) {
-            diary.record2 = diary.record2 + 1;
-            await diary.save();
-        } else if (competition.mode === 3) {
-            if (fish.fishWidth >= competition.questFishWidth) {
-                diary.record3 = diary.record3 + 1;
+                diary.record0 = newRecord0;
                 await diary.save();
-            }
-        } else if (competition.mode === 4) {
-            if (Math.abs(diary.record4) > Math.abs(fish.fishWidth - competition.questSpecialWidth)) {
-                diary.record4 = fish.fishWidth - competition.questSpecialWidth;
+            } else if (competition.mode === 1) {
+                const diaryFish = await Fish.findOne({
+                    order: [['fishWidth', 'DESC']]
+                });
+
+                diary.record1 = diaryFish.fishWidth;
                 await diary.save();
+            } else if (competition.mode === 2) {
+                diary.record2 = diary.record2 + 1;
+                await diary.save();
+            } else if (competition.mode === 3) {
+                if (fish.fishWidth >= competition.questFishWidth) {
+                    diary.record3 = diary.record3 + 1;
+                    await diary.save();
+                }
+            } else if (competition.mode === 4) {
+                if (Math.abs(diary.record4) > Math.abs(fish.fishWidth - competition.questSpecialWidth)) {
+                    diary.record4 = fish.fishWidth - competition.questSpecialWidth;
+                    await diary.save();
+                }
             }
         }
 
@@ -138,3 +142,93 @@ exports.getFishesByCompetition = (req, res) => {
         return res.status(200).send({msg: err.toString()});
     })
 };
+
+exports.getFishById = (req, res) => {
+    const fishId = req.body.fishId;
+
+    Fish.findOne({
+        where: {id: fishId},
+        include: [{
+            model: User,
+            attributes: ['id', 'name']
+        }, {
+            model: Competition,
+            attributes: ['id', 'name']
+        }, {
+            model: FishImage
+        }]
+    }).then((data) => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(200).send({msg: err.toString()});
+    })
+}
+
+exports.getAllFishes = async (req, res) => {
+    try {
+        const totalCount = await Fish.count();
+
+        const fishes = await Fish.findAll({
+            limit: req.body.limit || 1000000,
+            offset: req.body.offset || 0,
+            include: [{
+                model: User,
+                attributes: ['id', 'name'],
+                include: [{
+                    model: Profile,
+                    attributes: ['id', 'username']
+                }]
+            }, {
+                model: Competition,
+                attributes: ['id', 'name']
+            }, {
+                model: FishType,
+                attributes: ['id', 'name']
+            }]
+        });
+
+        return res.status(200).send({result: fishes, totalCount: totalCount});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
+
+exports.getFishesByMultiFilter = async (req, res) => {
+    try {
+        const competitionId = req.body.competitionId;
+        const status = req.body.status;
+
+        let filter = {};
+
+        if (competitionId !== 0) filter.competitionId = competitionId;
+        if (status !== 2) filter.status = status;
+
+        const totalCount = await Fish.count({
+            where: filter
+        });
+
+        const fishes = await Fish.findAll({
+            limit: req.body.limit || 1000000,
+            offset: req.body.offset || 0,
+            where: filter,
+            include: [{
+                model: User,
+                attributes: ['id', 'name'],
+                include: [{
+                    model: Profile,
+                    attributes: ['id', 'username']
+                }]
+            }, {
+                model: Competition,
+                attributes: ['id', 'name']
+            }, {
+                model: FishType,
+                attributes: ['id', 'name']
+            }]
+        });
+
+        return res.status(200).send({result: fishes, totalCount: totalCount});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}

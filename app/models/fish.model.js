@@ -12,6 +12,10 @@ module.exports = (sequelize, Sequelize) => {
         fishWidth: {
             type: Sequelize.DOUBLE
         },
+        status: {
+            type: Sequelize.INTEGER(2),
+            defaultValue: 0,
+        },
         deviation: {
             type: Sequelize.DOUBLE
         },

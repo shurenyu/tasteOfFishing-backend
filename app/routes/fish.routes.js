@@ -23,9 +23,27 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/fish/get-all",
+        [authJwt.verifyToken],
+        controller.getAllFishes
+    );
+
+    app.all(
+        "/fish/get-by-id",
+        [authJwt.verifyToken],
+        controller.getFishById
+    );
+
+    app.all(
         "/fish/get-by-user",
         [authJwt.verifyToken],
         controller.getFishesByUser
+    );
+
+    app.all(
+        "/fish/get-by-multi-filter",
+        [authJwt.verifyToken],
+        controller.getFishesByMultiFilter
     );
 
     app.all(

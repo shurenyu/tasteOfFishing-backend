@@ -1,7 +1,7 @@
 const db = require("../models");
 const Competition = db.competition;
 const Diary = db.diary;
-const Fish = db.fish;
+const FishType = db.fishType;
 const Op = db.Sequelize.Op;
 
 /**
@@ -62,13 +62,22 @@ exports.getCompetitionById = (req, res) => {
     })
 };
 
-exports.getAllCompetitions = (req, res) => {
-    Competition.findAll()
-        .then(data => {
-            return res.status(200).send({result: data});
-        }).catch(err => {
-            return res.status(500).send({msg: err.toString()});
-        })
+exports.getAllCompetitions = async (req, res) => {
+    try {
+        const totalCount = await Competition.count();
+
+        const competitions = await Competition.findAll({
+            limit: req.body.limit || 1000000,
+            offset: req.body.offset || 0,
+            include: [{
+                model: FishType
+            }]
+        });
+
+        return res.status(200).send({result: competitions, totalCount: totalCount});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
 };
 
 exports.deleteCompetitionById = (req, res) => {
@@ -127,6 +136,52 @@ exports.getQuestCompetitions = (req, res) => {
         return res.status(500).send({msg: err.toString()});
     })
 };
+
+exports.getCompetitionByMultiFilter = async (req, res) => {
+    const type = req.body.type;
+    const mode = req.body.mode;
+    const status = req.body.status;
+    const filter = {};
+    const now = new Date();
+
+    if (type !== 'ALL') filter.type = type;
+    if (mode === 0) filter.mode = 0;
+    if (mode === 1) filter.mode = {
+        [Op.gt]: 0
+    }
+    if (status === 0) {
+        filter.endDate = {
+            [Op.lt]: now.getTime()
+        };
+    } else if (status === 1) {
+        filter.startDate = {
+            [Op.lt]: now.getTime()
+        };
+        filter.endDate = {
+            [Op.gt]: now.getTime()
+        };
+    } else if (status === 2) {
+        filter.startDate = {
+            [Op.gt]: now.getTime()
+        };
+    }
+
+    try {
+        const count = await Competition.count({
+            where: filter
+        });
+
+        const data = await Competition.findAll({
+            limit: req.body.limit || 1000000,
+            offset: req.body.offset || 0,
+            where: filter
+        });
+
+        return res.status(200).send({result: data, totalCount: count});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
 
 
 
