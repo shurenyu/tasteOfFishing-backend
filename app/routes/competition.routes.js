@@ -47,6 +47,18 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/competition/get-progressing-by-user",
+        [authJwt.verifyToken],
+        controller.getProgressingCompetitionsByUser
+    );
+
+    app.all(
+        "/competition/get-attended-by-user",
+        [authJwt.verifyToken],
+        controller.getAttendedCompetitionsByUser
+    );
+
+    app.all(
         "/competition/get-rank-competition",
         [authJwt.verifyToken],
         controller.getRankCompetitions

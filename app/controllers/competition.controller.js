@@ -111,6 +111,55 @@ exports.getProgressingCompetitions = (req, res) => {
     })
 };
 
+exports.getProgressingCompetitionsByUser = (req, res) => {
+    const now = new Date();
+
+    Diary.findAll({
+        where: {userId: req.body.userId},
+        include: [{
+            model: Competition,
+            where: {
+                startDate: {
+                    [Op.lte]: now.getTime()
+                },
+                endDate: {
+                    [Op.gte]: now.getTime()
+                }
+            },
+            include: [{
+                model: FishType
+            }]
+        }]
+    }).then(data => {
+        return res.status(200).send({result: data, totalCount: data.length});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+};
+
+exports.getAttendedCompetitionsByUser = (req, res) => {
+    const now = new Date();
+
+    Diary.findAll({
+        where: {userId: req.body.userId},
+        include: [{
+            model: Competition,
+            where: {
+                endDate: {
+                    [Op.lt]: now.getTime()
+                }
+            },
+            include: [{
+                model: FishType
+            }]
+        }]
+    }).then(data => {
+        return res.status(200).send({result: data, totalCount: data.length});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+};
+
 exports.getRankCompetitions = (req, res) => {
     Competition.findAll({
         where: {

@@ -38,14 +38,7 @@ let upload = multer({
 
 router.post("/upload", upload.single('selectedFile'), (req, res, next) => {
     const fileUrl = req.file.filename;
-    const fileType = req.file.mimetype;
-    Document.create({
-        documento: fileUrl,
-        mimeType: fileType,
-        ultimaModificacion: new Date(),
-    }).then((data) => {
-        return res.status(200).json({result: data.id, fileUrl: data.documento});
-    }).catch(err => console.log(err))
+    return res.status(200).json({result: fileUrl});
 });
 
 module.exports = router;

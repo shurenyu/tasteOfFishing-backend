@@ -54,5 +54,6 @@ db.fish.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
 db.fish.hasOne(db.competition, {sourceKey: 'competitionId', foreignKey: 'id'});
 db.fish.hasOne(db.fishType, {sourceKey: 'fishTypeId', foreignKey: 'id'});
 db.fish.hasMany(db.fishImage);
+db.diary.hasOne(db.competition, {sourceKey: 'competitionId', foreignKey: 'id'});
 
 module.exports = db;
