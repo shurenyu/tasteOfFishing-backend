@@ -20,7 +20,7 @@ exports.registerDiary = (req, res) => {
             return res.status(200).send({result: 'DIARY_REGISTER_SUCCESS'});
         })
         .catch(err => {
-            return res.status(200).send({msg: err.toString()});
+            return res.status(500).send({msg: err.toString()});
         })
 };
 
@@ -118,17 +118,19 @@ exports.getWinners = async (req, res) => {
             data = await Diary.findAll({
                 limit: 3,
                 order: [['record0', 'DESC']],
+                where: {competitionId: competitionId},
                 include: [{
                     model: User,
                     include: [{
                         model: Profile
                     }]
-                }]
+                }],
             });
         } else if (competition.mode === 1) {
             data = await Diary.findAll({
                 order: [['record1', 'DESC']],
                 where: {
+                    competitionId: competitionId,
                     record1: {[Op.gte]: competition.questFishWidth}
                 },
                 include: [{
@@ -136,12 +138,13 @@ exports.getWinners = async (req, res) => {
                     include: [{
                         model: Profile
                     }]
-                }]
+                }],
             })
         } else if (competition.mode === 2) {
             data = await Diary.findAll({
                 order: [['record2', 'DESC']],
                 where: {
+                    competitionId: competitionId,
                     record2: {[Op.gte]: competition.questFishNumber}
                 },
                 include: [{
@@ -155,6 +158,7 @@ exports.getWinners = async (req, res) => {
             data = await Diary.findAll({
                 order: [['record3', 'DESC']],
                 where: {
+                    competitionId: competitionId,
                     record3: {[Op.gte]: competition.questFishNumber}
                 },
                 include: [{
@@ -168,6 +172,7 @@ exports.getWinners = async (req, res) => {
             data = await Diary.findAll({
                 limit: 3,
                 order: [['record4', 'ASC']],
+                where: {competitionId: competitionId},
                 include: [{
                     model: User,
                     include: [{
@@ -206,7 +211,7 @@ exports.deleteDiaryById = (req, res) => {
     }).then(cnt => {
         return res.status(200).send({result: cnt});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 
@@ -223,6 +228,6 @@ exports.addDiaryComment = (req, res) => {
             return res.status(200).send({result: 'DIARY_COMMENT_REGISTER_SUCCESS'});
         })
         .catch(err => {
-            return res.status(200).send({msg: err.toString()});
+            return res.status(500).send({msg: err.toString()});
         })
 };

@@ -16,7 +16,7 @@ exports.registerPost = (req, res) => {
             return res.status(200).send({result: 'POST_REGISTER_SUCCESS'});
         })
         .catch(err => {
-            return res.status(200).send({msg: err.toString()});
+            return res.status(500).send({msg: err.toString()});
         })
 };
 
@@ -39,7 +39,7 @@ exports.getPostByUser = async (req, res) => {
 
         return res.status(200).send({result: data, totalCount: count});
     } catch (err) {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     }
 };
 
@@ -50,7 +50,7 @@ exports.getPostById = (req, res) => {
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 
@@ -153,7 +153,7 @@ exports.getPostCommentByPost = (req, res) => {
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 
@@ -220,7 +220,7 @@ exports.getPostCommentReplyByPostComment = (req, res) => {
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 

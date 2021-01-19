@@ -12,12 +12,15 @@ exports.registerTerms = (req, res) => {
             return res.status(200).send({result: 'TERMS_REGISTER_SUCCESS'});
         })
         .catch(err => {
-            return res.status(200).send({msg: err.toString()});
+            return res.status(500).send({msg: err.toString()});
         })
 };
 
 exports.getAllTerms = (req, res) => {
-    Terms.findAll()
+    Terms.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+    })
         .then(data => {
             return res.status(200).send({result: data});
         }).catch(err => {
@@ -32,7 +35,7 @@ exports.getTermsById = (req, res) => {
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 

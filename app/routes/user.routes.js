@@ -57,4 +57,16 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.deleteUserById
     );
+
+    app.all(
+        "/user/record/get",
+        [authJwt.verifyToken],
+        controller.getRecordByUser
+    );
+
+    app.all(
+        "/test",
+        [authJwt.verifyToken],
+        controller.testing
+    );
 };

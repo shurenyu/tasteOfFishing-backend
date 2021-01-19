@@ -12,7 +12,7 @@ exports.registerFishType = (req, res) => {
             return res.status(200).send({result: data, message: 'FISH_TYPE_REGISTER_SUCCESS'});
         })
         .catch(err => {
-            return res.status(200).send({msg: err.toString()});
+            return res.status(500).send({msg: err.toString()});
         })
 };
 
@@ -32,7 +32,7 @@ exports.getFishTypeById = (req, res) => {
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 

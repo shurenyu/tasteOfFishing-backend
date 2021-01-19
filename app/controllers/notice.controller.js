@@ -12,16 +12,30 @@ exports.registerNotice = (req, res) => {
             return res.status(200).send({result: 'NOTICE_REGISTER_SUCCESS'});
         })
         .catch(err => {
-            return res.status(200).send({msg: err.toString()});
+            return res.status(500).send({msg: err.toString()});
         })
 };
 
 exports.getAllNotice = (req, res) => {
-    Notice.findAll()
+    Notice.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0
+    })
         .then(data => {
             return res.status(200).send({result: data});
         }).catch(err => {
         return res.status(500).send({msg: err.toString()});
+    })
+};
+
+exports.getRecentNotice = (req, res) => {
+    Notice.findAll({
+        limit: req.body.limit || 1000000,
+        order: [['updatedDate', 'DESC']]
+    }).then((data) => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(200).send({msg: err.toString()});
     })
 };
 

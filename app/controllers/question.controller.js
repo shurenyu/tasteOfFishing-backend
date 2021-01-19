@@ -14,7 +14,7 @@ exports.registerQuestion = (req, res) => {
             return res.status(200).send({result: 'QUESTION_REGISTER_SUCCESS'});
         })
         .catch(err => {
-            return res.status(200).send({msg: err.toString()});
+            return res.status(500).send({msg: err.toString()});
         })
 };
 
@@ -34,7 +34,7 @@ exports.getQuestionById = (req, res) => {
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 
@@ -107,6 +107,6 @@ exports.addCommentToAnswer = (req, res) => {
             return res.status(200).send({result: 'ANSWER_COMMENT_REGISTER_SUCCESS'});
         })
         .catch(err => {
-            return res.status(200).send({msg: err.toString()});
+            return res.status(500).send({msg: err.toString()});
         })
 };

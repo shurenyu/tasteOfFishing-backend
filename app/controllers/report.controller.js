@@ -14,7 +14,7 @@ exports.registerReport = (req, res) => {
             return res.status(200).send({result: 'REPORT_REGISTER_SUCCESS'});
         })
         .catch(err => {
-            return res.status(200).send({msg: err.toString()});
+            return res.status(500).send({msg: err.toString()});
         })
 };
 
@@ -34,7 +34,7 @@ exports.getReportById = (req, res) => {
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 
@@ -45,7 +45,7 @@ exports.getReportByUser = (req, res) => {
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 
@@ -56,7 +56,7 @@ exports.getReportByReporter = (req, res) => {
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 };
 

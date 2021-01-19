@@ -75,4 +75,11 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.getCompetitionByMultiFilter
     );
+
+    app.all(
+        "/competition/ranking/get",
+        [authJwt.verifyToken],
+        controller.getRankingOfCompetition
+    );
+
 };

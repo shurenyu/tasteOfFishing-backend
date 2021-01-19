@@ -57,4 +57,10 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.addFishImage
     );
+
+    app.all(
+        "/fish/update",
+        [authJwt.verifyToken],
+        controller.updateFish
+    );
 };

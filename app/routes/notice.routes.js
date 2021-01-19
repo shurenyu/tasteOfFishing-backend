@@ -29,6 +29,13 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/notice/get-by-recent",
+        [authJwt.verifyToken],
+        controller.getRecentNotice
+    );
+
+
+    app.all(
         "/notice/get-all",
         [authJwt.verifyToken],
         controller.getAllNotice

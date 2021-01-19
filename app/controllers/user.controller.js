@@ -1,6 +1,11 @@
+
+
 const db = require("../models");
 const User = db.user;
 const Profile = db.profile;
+const Diary = db.diary;
+const Competition = db.competition;
+const Op = db.Sequelize.Op;
 
 /**
  * Register Profile
@@ -105,7 +110,7 @@ exports.getUserById = (req, res) => {
     }).then(data => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 }
 
@@ -121,7 +126,7 @@ exports.getFullUserInfo = (req, res) => {
     }).then(data => {
         return res.status(200).send({result: data});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 }
 
@@ -133,6 +138,80 @@ exports.deleteUserById = (req, res) => {
     }).then(cnt => {
         return res.status(200).send({result: cnt});
     }).catch(err => {
-        return res.status(200).send({msg: err.toString()});
+        return res.status(500).send({msg: err.toString()});
     })
 }
+
+exports.getRecordByUser = async (req, res) => {
+    const userId = req.body.userId;
+    let totalDiaryCount = 0;
+    let rankDiaryCount = 0;
+    let questDiaryCount = 0;
+    let rankChampionshipCount = 0;
+    let questChampionshipCount = 0;
+
+    const myDiaries = await Diary.findAll({
+        where: {userId: userId},
+        include: [{
+            model: Competition,
+        }]
+    });
+
+    totalDiaryCount = myDiaries.length;
+
+    for (const item of myDiaries) {
+        if (item.competition.mode === 0) {
+            rankDiaryCount += 1;
+
+            const maxScore = await Diary.max('record0', {
+                where: {competitionId: item.competition.id}
+            });
+
+            if (item.record0 === maxScore) rankChampionshipCount += 1;
+        } else {
+            questDiaryCount += 1;
+
+            const comp = await Competition.findOne({
+                where: {id: item.competition.id}
+            });
+
+            if (item.competition.mode === 1) {
+                if (item.record1 >= comp.questFishWidth) questChampionshipCount += 1;
+            } else if (item.competition.mode === 2) {
+                if (item.record2 >= comp.questFishNumber) questChampionshipCount += 1;
+            } else if (item.competition.mode === 3) {
+                if (item.record3 >= comp.questFishNumber) questChampionshipCount += 1;
+            } else {
+                const minBias = await Diary.min('record4', {
+                    where: {competitionId: item.competition.id}
+                });
+
+                if (item.record4 === minBias) questChampionshipCount += 1;
+            }
+        }
+    }
+
+    const data = {
+        totalDiaryCount,
+        rankDiaryCount,
+        questDiaryCount,
+        rankChampionshipCount,
+        questChampionshipCount,
+    }
+
+    return res.status(200).send({result: data});
+}
+
+const Test = db.test
+exports.testing = async (req, res) => {
+    console.log("***********************")
+    const data = await Test.findAll({
+        // order: [['point', 'DESC']],
+        attributes: ['id', 'point',
+            [db.Sequelize.literal('(RANK() OVER (ORDER BY point DESC))'), 'rank']
+        ]
+    });
+
+    return res.status(200).send({result: data});
+}
+

@@ -1,5 +1,8 @@
 module.exports = (sequelize, Sequelize) => {
     return sequelize.define("term", {
+        title: {
+            type: Sequelize.STRING(30)
+        },
         content: {
             type: Sequelize.STRING(100)
         },

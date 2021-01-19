@@ -16,8 +16,8 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER(2),
             defaultValue: 0,
         },
-        deviation: {
-            type: Sequelize.DOUBLE
+        note: {
+            type: Sequelize.STRING(100),
         },
         registerDate: {
             type: Sequelize.DATE,

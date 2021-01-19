@@ -10,13 +10,13 @@ const Op = db.Sequelize.Op;
  * @param res
  * @returns {token}
  */
-exports.registerCompetition = (req, res) => {
+exports.registerCompetition = async (req, res) => {
     const newCompetition = {
         ...req.body
     };
-    console.log(newCompetition)
+
     Competition.create(newCompetition)
-        .then(data => {
+        .then(async data => {
             return res.status(200).send({result: 'COMPETITION.REGISTER'});
         })
         .catch(err => {
@@ -97,6 +97,8 @@ exports.getProgressingCompetitions = (req, res) => {
     const now = new Date();
 
     Competition.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
         where: {
             startDate: {
                 [Op.lte]: now.getTime()
@@ -116,6 +118,8 @@ exports.getProgressingCompetitionsByUser = (req, res) => {
     const now = new Date();
 
     Diary.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
         where: {userId: req.body.userId},
         include: [{
             model: Competition,
@@ -142,6 +146,8 @@ exports.getAttendedCompetitionsByUser = (req, res) => {
     const now = new Date();
 
     Diary.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
         where: {userId: req.body.userId},
         include: [{
             model: Competition,
@@ -163,6 +169,8 @@ exports.getAttendedCompetitionsByUser = (req, res) => {
 
 exports.getRankCompetitions = (req, res) => {
     Competition.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
         where: {
             mode: 0
         }
@@ -175,6 +183,8 @@ exports.getRankCompetitions = (req, res) => {
 
 exports.getQuestCompetitions = (req, res) => {
     Competition.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
         where: {
             mode: {
                 [Op.gt]: 0
@@ -233,5 +243,26 @@ exports.getCompetitionByMultiFilter = async (req, res) => {
     }
 }
 
+exports.getRankingOfCompetition = async (req, res) => {
+    const competitionId = req.body.competitionId;
+    const comp = await Competition.findOne({
+        where: {id: competitionId}
+    });
 
+    let diariesSorted = [];
+    const defaultCondition = {
+        limit: req.body.limit || 100000000,
+        offset: req.body.offset || 0,
+        where: {
+            competitionId: competitionId,
+        }
+    };
 
+    if (comp.mode === 0) {
+        diariesSorted = await Diary.findAll({
+            ...defaultCondition,
+            order: [['record0', 'DESC']],
+            attributes: ['id']
+        })
+    }
+}
