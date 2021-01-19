@@ -7,7 +7,8 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING(8)
         },
         updatedDate: {
-            type: Sequelize.DATE
+            type: Sequelize.DATE,
+            defaultValue: Sequelize.NOW
         }
     }, {
         timestamps: false,

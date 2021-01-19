@@ -21,6 +21,7 @@ module.exports = (sequelize, Sequelize) => {
         },
         registerDate: {
             type: Sequelize.DATE,
+            defaultValue: Sequelize.NOW
         },
     }, {
         timestamps: false,

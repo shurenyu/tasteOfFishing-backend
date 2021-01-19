@@ -14,6 +14,7 @@ exports.registerCompetition = (req, res) => {
     const newCompetition = {
         ...req.body
     };
+    console.log(newCompetition)
     Competition.create(newCompetition)
         .then(data => {
             return res.status(200).send({result: 'COMPETITION.REGISTER'});
