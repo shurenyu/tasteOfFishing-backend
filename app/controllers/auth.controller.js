@@ -4,13 +4,15 @@ const User = db.user;
 const Profile = db.profile;
 const EmailVerification = db.emailVerification;
 const EmailCertification = db.emailCertification;
+const PhoneCertification = db.phoneVerification;
 const validateRegisterInput = require("../validations/register.validation");
 const validateLoginInput = require("../validations/login.validation");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const sendMail = require("../utils/email");
 const makeMailFromTemplate = require("../utils/email/mailTemplate");
-
+const google = require("googleapis");
+// import { google } from 'googleapis';
 
 const generateToken = async (user) => {
     const payload = {
@@ -418,3 +420,84 @@ exports.verifyCodeForEmail = async (req, res) => {
         return res.status(500).send({message: err.message});
     }
 };
+
+/**
+ *
+ * @param req
+ * @param res
+ */
+exports.verifyPhoneNumber = async (req, res) => {
+    try {
+        const { phoneNumber, recaptchaToken } = req.body;
+
+        const identityToolkit = google.identitytoolkit({
+            auth: config.GOOGLE_API_KEY,
+            version: 'v3',
+        });
+
+        const response = await identityToolkit.relyingparty.sendVerificationCode({
+            phoneNumber,
+            recaptchaToken,
+        });
+
+        // save sessionInfo into db. You will need this to verify the SMS code
+        const sessionInfo = response.data.sessionInfo;
+
+        const info = await PhoneCertification.findOne({
+            where: {
+                phoneNumber: phoneNumber
+            }
+        });
+
+        if (info) {
+            info.phoneNumber = phoneNumber;
+            info.sessionId = sessionInfo;
+            info.updatedDate = new Date();
+            await info.save();
+        } else {
+            await PhoneCertification.create({
+                phoneNumber: phoneNumber,
+                sessionId: sessionInfo,
+                updatedDate: new Date(),
+            })
+        }
+
+        return res.status(200).send({
+            period: config.PENDING_EXPIRATION / 60000,
+            msg: 'AUTH.SEND_CODE_SUCCESS',
+        });
+    } catch (err) {
+        return res.status(500).send({msg: err.message});
+    }
+}
+
+/**
+ *
+ * @param req
+ * @param res
+ * @returns {Promise<void>}
+ */
+exports.verifyCodeForPhoneNumber = async (req, res) => {
+    try {
+        const { phoneNumber, verificationCode } = req.body;
+
+        const identityToolkit = google.identitytoolkit({
+            auth: config.GOOGLE_API_KEY,
+            version: 'v3',
+        });
+
+        const info = await PhoneCertification.findOne({
+            phoneNumber: phoneNumber
+        });
+
+        const response = await identityToolkit.relyingparty.verifyPhoneNumber({
+            code: verificationCode,
+            sessionInfo: info.sessionId,
+        });
+
+        console.log(response.data);
+        return res.status(200).send({})
+    } catch (err) {
+        return res.status(500).send({msg: err.message});
+    }
+}

@@ -20,9 +20,11 @@ module.exports = (sequelize, Sequelize) => {
         },
         withdrawEmail: {
             type: Sequelize.STRING(50),
+            defaultValue: "",
         },
         withdrawPhoneNumber: {
             type: Sequelize.STRING(12),
+            defaultValue: "",
         },
         pointAmount: {
             type: Sequelize.INTEGER(20),
