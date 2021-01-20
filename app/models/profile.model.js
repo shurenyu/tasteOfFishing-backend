@@ -10,7 +10,7 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING(32)
         },
         avatar: {
-            type: Sequelize.STRING(100)
+            type: Sequelize.STRING(256)
         },
         serviceAlarm: {
             type: Sequelize.BOOLEAN

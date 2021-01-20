@@ -39,6 +39,7 @@ let upload = multer({
 router.post("/upload", upload.single('selectedFile'), (req, res, next) => {
     const fileUrl = req.file.filename;
     const fullPath = conf.BASE_URL + "/public/files/" + fileUrl;
+    console.log(fullPath);
     return res.status(200).json({result: fileUrl, fullPath: fullPath});
 });
 

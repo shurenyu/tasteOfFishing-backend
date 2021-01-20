@@ -25,22 +25,28 @@ exports.registerDiary = (req, res) => {
 };
 
 exports.getDiariesByUser = (req, res) => {
-    Diary.hasOne(Competition);
-    Competition.belongsTo(Diary);
-
     Competition.hasMany(Fish);
-    Fish.belongsTo(Competition);
 
     const userId = req.body.userId;
 
     Diary.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['createdDate', 'DESC']],
         where: {userId: userId},
         attributes: ['id'],
         include: [{
             model: Competition,
-            attributes: ['id', 'name'],
+            where: {
+                endDate: {
+                    [Op.lt]: (new Date()).getTime()
+                }
+            },
+            attributes: ['id', 'name', 'description'],
             include: [{
+                limit: req.body.fishLimit || 1000000,
                 model: Fish,
+                order: [['fishWidth', 'DESC']],
                 where: {
                     userId: userId
                 }
@@ -54,14 +60,13 @@ exports.getDiariesByUser = (req, res) => {
 };
 
 /**
- *
+ * Get Ranking of the competition
  * @param req keys: {competitionId, limit}
  * @param res
  * @returns {Promise<void>}
  */
 exports.getDiaryByCompetition = async (req, res) => {
-    Diary.hasOne(User);
-    User.belongsTo(Diary);
+    User.hasMany(Fish);
 
     try {
         const competitionId = req.body.competitionId;
@@ -72,19 +77,59 @@ exports.getDiaryByCompetition = async (req, res) => {
         });
 
         let order = [];
-        if (competition.mode === 0) order = [['record0', 'DESC']];
-        if (competition.mode === 1) order = [['record1', 'DESC']];
-        if (competition.mode === 2) order = [['record2', 'DESC']];
-        if (competition.mode === 3) order = [['record3', 'DESC']];
-        if (competition.mode === 4) order = [['record4', 'ASC']];
+        let attributes = [];
+        if (competition.mode === 0) {
+            order = [['record0', 'DESC']];
+            attributes = ['id', 'record0',
+                [db.Sequelize.literal('(RANK() OVER (ORDER BY record0 DESC))'), 'rank']
+            ]
+        }
+        if (competition.mode === 1) {
+            order = [['record1', 'DESC']];
+            attributes = ['id', 'record1',
+                [db.Sequelize.literal('(RANK() OVER (ORDER BY record1 DESC))'), 'rank']
+            ]
+        }
+        if (competition.mode === 2) {
+            order = [['record2', 'DESC']];
+            attributes = ['id', 'record2',
+                [db.Sequelize.literal('(RANK() OVER (ORDER BY record2 DESC))'), 'rank']
+            ]
+        }
+        if (competition.mode === 3) {
+            order = [['record3', 'DESC']];
+            attributes = ['id', 'record3',
+                [db.Sequelize.literal('(RANK() OVER (ORDER BY record3 DESC))'), 'rank']
+            ]
+        }
+        if (competition.mode === 4) {
+            order = [['record4', 'ASC']];
+            attributes = ['id', 'record4',
+                [db.Sequelize.literal('(RANK() OVER (ORDER BY record4 DESC))'), 'rank']
+            ]
+        }
 
         const data = await Diary.findAll({
-            limit: limit,
+            limit: limit || 1000000,
             order: order,
+            where: {
+                competitionId: competitionId,
+            },
+            attributes: attributes,
             include: [{
                 model: User,
+                attributes: ['id'],
                 include: [{
-                    model: Profile
+                    model: Profile,
+                    attributes: ['id', 'username', 'style']
+                }, {
+                    model: Fish,
+                    limit: 1,
+                    order: [['fishWidth', 'DESC']],
+                    where: {
+                        competitionId: competitionId,
+                    },
+                    attributes: ['id', 'fishTypeId', 'fishWidth']
                 }]
             }]
         });

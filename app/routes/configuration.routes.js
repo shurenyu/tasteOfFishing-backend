@@ -39,4 +39,23 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.deleteFishType
     );
+
+    app.all(
+        "/banner/register",
+        [authJwt.verifyToken],
+        controller.registerBanner
+    );
+
+    app.all(
+        "/banner/get-all",
+        [authJwt.verifyToken],
+        controller.getAllBanner
+    );
+
+    app.all(
+        "/banner/delete",
+        [authJwt.verifyToken],
+        controller.deleteBanner
+    );
+
 };

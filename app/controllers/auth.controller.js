@@ -427,6 +427,7 @@ exports.verifyCodeForEmail = async (req, res) => {
  * @param res
  */
 exports.verifyPhoneNumber = async (req, res) => {
+    console.log(req.body.phoneNumber)
     try {
         const { phoneNumber, recaptchaToken } = req.body;
 
@@ -469,7 +470,7 @@ exports.verifyPhoneNumber = async (req, res) => {
     } catch (err) {
         return res.status(500).send({msg: err.message});
     }
-}
+};
 
 /**
  *
@@ -500,4 +501,4 @@ exports.verifyCodeForPhoneNumber = async (req, res) => {
     } catch (err) {
         return res.status(500).send({msg: err.message});
     }
-}
+};

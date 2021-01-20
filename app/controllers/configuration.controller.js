@@ -1,5 +1,6 @@
 const db = require("../models");
 const FishType = db.fishType;
+const Banner = db.banner;
 
 exports.registerFishType = (req, res) => {
     const data = {
@@ -70,6 +71,47 @@ exports.deleteFishType = (req, res) => {
         where: {id: fishTypeId}
     }).then(data => {
         return res.status(200).send({result: 'FISH_TYPE_DELETE_SUCCESS'});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+};
+
+
+exports.registerBanner = (req, res) => {
+    const data = {
+        title: req.body.title,
+        subtitle: req.body.subtitle,
+        image: req.body.image,
+    };
+
+    Banner.create(data)
+        .then(data => {
+            return res.status(200).send({result: 'BANNER_REGISTER_SUCCESS'});
+        })
+        .catch(err => {
+            return res.status(500).send({msg: err.toString()});
+        })
+};
+
+exports.getAllBanner = (req, res) => {
+    Banner.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['updatedDate', 'DESC']]
+    }).then(data => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+};
+
+exports.deleteBanner = (req, res) => {
+    const bannerId = req.body.bannerId;
+
+    FishType.destroy({
+        where: {id: bannerId}
+    }).then(data => {
+        return res.status(200).send({result: 'BANNER_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })

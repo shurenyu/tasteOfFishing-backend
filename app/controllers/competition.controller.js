@@ -81,6 +81,23 @@ exports.getAllCompetitions = async (req, res) => {
     }
 };
 
+exports.getNewCompetiton = (req, res) => {
+    Competition.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['startDate', 'ASC']],
+        where: {
+            startDate: {
+                [Op.gt]: (new Date()).getTime()
+            }
+        }
+    }).then(data => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
+
 exports.deleteCompetitionById = (req, res) => {
     const competitionId = req.body.competitionId;
 
@@ -243,26 +260,4 @@ exports.getCompetitionByMultiFilter = async (req, res) => {
     }
 }
 
-exports.getRankingOfCompetition = async (req, res) => {
-    const competitionId = req.body.competitionId;
-    const comp = await Competition.findOne({
-        where: {id: competitionId}
-    });
 
-    let diariesSorted = [];
-    const defaultCondition = {
-        limit: req.body.limit || 100000000,
-        offset: req.body.offset || 0,
-        where: {
-            competitionId: competitionId,
-        }
-    };
-
-    if (comp.mode === 0) {
-        diariesSorted = await Diary.findAll({
-            ...defaultCondition,
-            order: [['record0', 'DESC']],
-            attributes: ['id']
-        })
-    }
-}
