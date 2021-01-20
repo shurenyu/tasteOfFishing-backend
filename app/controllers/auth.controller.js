@@ -2,6 +2,7 @@ const db = require("../models");
 const config = require("../config/auth.config");
 const User = db.user;
 const EmailVerification = db.emailVerification;
+const EmailCertification = db.emailCertification;
 const validateRegisterInput = require("../validations/register.validation");
 const validateLoginInput = require("../validations/login.validation");
 const jwt = require("jsonwebtoken");
@@ -95,7 +96,7 @@ exports.register = async (req, res) => {
     try {
         const user = await User.findOne({where: {email: req.body.email.toLowerCase()}});
         if (user) {
-            return res.status(400).json({msg: ["AUTH.VALIDATION.EMAIL_DUPLICATED"]});
+            return res.status(400).json({msg: "AUTH.VALIDATION.EMAIL_DUPLICATED"});
         }
 
         const newUser = {
@@ -118,12 +119,12 @@ exports.register = async (req, res) => {
                         // return res.status(200).json({accessToken: token});
                     })
                     .catch(err => {
-                        return res.status(500).json({msg: [err.toString()]});
+                        return res.status(500).json({msg: err.toString()});
                     });
             });
         });
     } catch (err) {
-        return res.status(500).json({msg: [err.toString()]});
+        return res.status(500).json({msg: err.toString()});
     }
 };
 
@@ -151,11 +152,11 @@ exports.login = async (req, res) => {
                     const token = await generateToken(user);
                     return res.status(200).json({accessToken: token});
                 } else {
-                    return res.status(400).json({msg: ["AUTH.VALIDATION.PASSWORD_WRONG"]});
+                    return res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
                 }
             }).catch(err => res.status(500).json({msg: err.toString()}));
         } else {
-            return res.status(404).json({msg: ["AUTH.VALIDATION.EMAIL_NOT_FOUND"]});
+            return res.status(404).json({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
         }
     } catch (err) {
         return res.status(400).json(err);
@@ -306,4 +307,68 @@ exports.getUserInfo = (req, res) => {
         .catch(err => {
             return res.status(400).json({msg: err.toString()});
         });
+};
+
+exports.verifyEmail = async (req, res) => {
+    const email = req.body.email.toLowerCase();
+
+    const code = await generateCode(6);
+
+    const data = {
+        email: email,
+        code: code,
+        updatedDate: new Date(),
+    }
+
+    const info = await EmailCertification.findOne({
+        where: {email: email}
+    });
+
+    if (info) {
+        info.code = code;
+        info.updatedDate = new Date();
+        await info.save();
+    } else {
+        await EmailCertification.create(data);
+    }
+
+    sendMail(
+        res,
+        email,
+        'Email Certification',
+        makeMailFromTemplate({
+            header: `안녕하세요.`,
+            title: '인증코드전송',
+            content: '이메일인증을 위해 아래의 인증코드를 리용하세요.',
+            value: code,
+            extra: '',
+        })
+    );
+}
+
+/**
+ *
+ * @param req keys: {email, code}
+ * @param res
+ * @returns {Promise<*>}
+ */
+exports.verifyCodeForEmail = async (req, res) => {
+    try {
+        const now = new Date();
+        const info = await EmailCertification.findOne({
+            where: {email: req.body.email.toLowerCase()}
+        });
+
+        if (req.body.code === '') {
+            return res.status(400).send({msg: 'AUTH.VALIDATION.REQUIRED_CODE'});
+        } else if (now - info.updatedDate > config.PENDING_EXPIRATION) {
+            return res.status(400).send({msg: 'AUTH.VERIFY_CODE_EXPIRED'});
+        } else if (info.code !== req.body.code) {
+            return res.status(400).send({msg: 'AUTH.VERIFY_CODE_INCORRECT'});
+        } else {
+            return res.status(200).send({result: 'AUTH.VERIFY_CODE_SUCCESS'});
+        }
+    } catch (err) {
+        return res.status(500).send({message: err.message});
+    }
 };

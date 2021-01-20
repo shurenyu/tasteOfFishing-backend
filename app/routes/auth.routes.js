@@ -48,4 +48,14 @@ module.exports = function (app) {
         "/auth/user/get-by-id",
         controller.getUserInfo
     )
+
+    app.all(
+        "/auth/email/verify",
+        controller.verifyEmail
+    )
+
+    app.all(
+        "/auth/code-for-email/verify",
+        controller.verifyCodeForEmail
+    )
 };

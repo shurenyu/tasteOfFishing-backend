@@ -29,6 +29,7 @@ db.answerComment = require("./answerComment.model")(sequelize, Sequelize);
 db.competition = require("./competition.model")(sequelize, Sequelize);
 db.diary = require("./diary.model")(sequelize, Sequelize);
 db.diaryComment = require("./diaryComment.model")(sequelize, Sequelize);
+db.emailCertification = require("./emailCertification.model")(sequelize, Sequelize);
 db.emailVerification = require("./emailVerification.model")(sequelize, Sequelize);
 db.fish = require("./fish.model")(sequelize, Sequelize);
 db.fishImage = require("./fishImage.model")(sequelize, Sequelize);
