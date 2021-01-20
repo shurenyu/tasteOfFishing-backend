@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const {v4: uuidv4} = require('uuid');
 const db = require("./models");
+const conf = require("./config/auth.config");
 
 const DIR = "./public/files";
 
@@ -37,7 +38,8 @@ let upload = multer({
 
 router.post("/upload", upload.single('selectedFile'), (req, res, next) => {
     const fileUrl = req.file.filename;
-    return res.status(200).json({result: fileUrl});
+    const fullPath = conf.BASE_URL + "/public/files/" + fileUrl;
+    return res.status(200).json({result: fileUrl, fullPath: fullPath});
 });
 
 module.exports = router;
