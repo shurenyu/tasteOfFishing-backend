@@ -1,6 +1,7 @@
 const db = require("../models");
 const config = require("../config/auth.config");
 const User = db.user;
+const Profile = db.profile;
 const EmailVerification = db.emailVerification;
 const EmailCertification = db.emailCertification;
 const validateRegisterInput = require("../validations/register.validation");
@@ -134,6 +135,51 @@ exports.register = async (req, res) => {
  * @param res
  * @returns {token}
  */
+exports.appLogin = async (req, res) => {
+    const {msg, isValid} = validateLoginInput(req.body);
+
+    if (!isValid) {
+        return res.status(400).json({msg: msg});
+    }
+
+    const device = req.body.device || '';
+
+    try {
+        const user = await User.findOne({
+            where: {email: req.body.email.toLowerCase()},
+            attributes: {
+                exclude: ['password'],
+            },
+            include: [{
+                model: Profile
+            }]
+        });
+
+        const generalInfo = await User.findOne({where: {email: req.body.email.toLowerCase()}});
+
+        if (generalInfo) {
+            bcrypt.compare(req.body.password, generalInfo.password).then(async isMatch => {
+                if (isMatch) {
+                    const token = await generateToken(generalInfo);
+                    return res.status(200).json({accessToken: token, userInfo: user});
+                } else {
+                    return res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
+                }
+            }).catch(err => res.status(500).json({msg: err.toString()}));
+        } else {
+            return res.status(404).json({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
+        }
+    } catch (err) {
+        return res.status(400).json(err);
+    }
+};
+
+/**
+ * AdminUser App Login
+ * @param req keys: {email, password}
+ * @param res
+ * @returns {token}
+ */
 exports.login = async (req, res) => {
     const {msg, isValid} = validateLoginInput(req.body);
 
@@ -150,7 +196,7 @@ exports.login = async (req, res) => {
             bcrypt.compare(req.body.password, user.password).then(async isMatch => {
                 if (isMatch) {
                     const token = await generateToken(user);
-                    return res.status(200).json({accessToken: token, userId: user.id});
+                    return res.status(200).json({accessToken: token});
                 } else {
                     return res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
                 }

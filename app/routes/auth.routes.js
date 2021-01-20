@@ -20,6 +20,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/auth/app-login",
+        controller.appLogin
+    );
+
+
+    app.all(
         "/auth/forgot-password",
         controller.forgotPassword
     );
