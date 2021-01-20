@@ -150,7 +150,7 @@ exports.login = async (req, res) => {
             bcrypt.compare(req.body.password, user.password).then(async isMatch => {
                 if (isMatch) {
                     const token = await generateToken(user);
-                    return res.status(200).json({accessToken: token});
+                    return res.status(200).json({accessToken: token, userId: user.id});
                 } else {
                     return res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
                 }

@@ -3,7 +3,6 @@ const router = express.Router();
 const multer = require('multer');
 const {v4: uuidv4} = require('uuid');
 const db = require("./models");
-const Document = db.document;
 
 const DIR = "./public/files";
 

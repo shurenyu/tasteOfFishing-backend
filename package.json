@@ -25,6 +25,7 @@
     "btoa": "^1.2.1",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "googleapis": "^67.0.0",
     "is-empty": "^1.2.0",
     "is-url": "^1.2.4",
     "jsonwebtoken": "^8.5.1",
