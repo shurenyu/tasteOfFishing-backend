@@ -60,6 +60,9 @@ exports.getWithdrawalById = (req, res) => {
 };
 
 exports.getWithdrawalByUser = (req, res) => {
+    Withdrawal.hasOne(User, {sourceKey: 'userId', foreignKey: 'id'});
+    Withdrawal.hasOne(AccountType, {sourceKey: 'accountTypeId', foreignKey: 'id'});
+
     const userId = req.body.userId;
     Withdrawal.findOne({
         where: {
