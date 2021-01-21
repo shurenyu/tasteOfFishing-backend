@@ -33,7 +33,6 @@ const sendMail = (res, to, user_name, userId, subject, content) => {
         html: content
     }, function (err, info) {
         if (err) {
-            console.log('errMessage: ', err.toString())
             return res.status(500).send({msg: "AUTH.ERROR", err: err.toString()});
         } else {
             return res.status(200).json({

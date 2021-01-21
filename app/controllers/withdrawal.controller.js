@@ -117,7 +117,6 @@ exports.finishWithdrawal = async (req, res) => {
         const withdrawal = await Withdrawal.findOne({
             where: {id: withdrawalId}
         });
-        console.log('$$$$$$$$$$$: ', withdrawal.status)
 
         if (withdrawal.status === 0) {
             await updateWithdrawalStatus(withdrawalId, status);
@@ -185,7 +184,7 @@ exports.registerAccountType = (req, res) => {
         type: req.body.accountType,
         createdDate: new Date()
     }).then(data => {
-        return res.status(200).send({result: 'WITHDRAWAL_ACCOUNTTYPE_REGISTER_SUCCESS'});
+        return res.status(200).send({result: data});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })

@@ -105,8 +105,7 @@ exports.register = async (req, res) => {
         const newUser = {
             name: req.body.name,
             email: req.body.email.toLowerCase(),
-            type: req.body.type,
-            active: false,
+            type: req.body.type, // 0- 관리자, 1-일반유저, 2-구글로그인유저, 3-페이스북로그인유저
             createdDate: new Date(),
         };
 
@@ -133,7 +132,7 @@ exports.register = async (req, res) => {
 
 
 /**
- * AdminUser Login
+ * APP Login
  * @param req keys: {email, password}
  * @param res
  * @returns {token}
@@ -173,12 +172,42 @@ exports.appLogin = async (req, res) => {
             return res.status(404).json({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
         }
     } catch (err) {
-        return res.status(400).json(err);
+        return res.status(500).json(err);
     }
 };
 
+
 /**
- * AdminUser App Login
+ * AdminUser Login
+ * @param req keys: {name, email, type}
+ * @param res
+ * @returns {token}
+ */
+exports.socialLogin = async (req, res) => {
+    try {
+        let user = await User.findOne({
+            where: {
+                email: req.body.email,
+            }
+        });
+
+        if (!user) {
+            user = await User.create({
+                name: req.body.name,
+                email: req.body.email,
+                type: req.body.type
+            });
+        }
+
+        const token = await generateToken(user);
+        return res.status(200).json({accessToken: token, userInfo: user});
+    } catch (err) {
+        return res.status(500).json(err);
+    }
+}
+
+/**
+ * AdminUser Login
  * @param req keys: {email, password}
  * @param res
  * @returns {token}
@@ -278,7 +307,6 @@ exports.verifyCodeAndSignUp = async (req, res) => {
                 }
             });
 
-            user.active = true;
             await user.save();
 
             const token = await generateToken(user);

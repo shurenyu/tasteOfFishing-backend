@@ -25,6 +25,11 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/auth/social-login",
+        controller.socialLogin
+    );
+
+    app.all(
         "/auth/forgot-password",
         controller.forgotPassword
     );
