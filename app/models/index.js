@@ -25,6 +25,7 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
+db.accountType = require("./accountType.model")(sequelize, Sequelize);
 db.answerComment = require("./answerComment.model")(sequelize, Sequelize);
 db.banner = require("./banner.model")(sequelize, Sequelize);
 db.competition = require("./competition.model")(sequelize, Sequelize);

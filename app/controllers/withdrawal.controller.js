@@ -1,6 +1,8 @@
 const db = require("../models");
 const Withdrawal = db.withdrawal;
 const Profile = db.profile;
+const User = db.user;
+const AccountType = db.accountType;
 
 exports.applyWithdrawal = async (req, res) => {
     try {
@@ -25,7 +27,20 @@ exports.applyWithdrawal = async (req, res) => {
 };
 
 exports.getAllWithdrawal = (req, res) => {
-    Withdrawal.findAll()
+    Withdrawal.hasOne(User, {sourceKey: 'userId', foreignKey: 'id'});
+    Withdrawal.hasOne(AccountType, {sourceKey: 'accountTypeId', foreignKey: 'id'});
+
+    Withdrawal.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['createdDate', 'ASC']],
+        include: [{
+            model: User,
+            attributes: ['id', 'name']
+        }, {
+            model: AccountType,
+        }]
+    })
         .then(data => {
             return res.status(200).send({result: data});
         }).catch(err => {
@@ -46,8 +61,17 @@ exports.getWithdrawalById = (req, res) => {
 
 exports.getWithdrawalByUser = (req, res) => {
     const userId = req.body.userId;
-    Withdrawal.findAll({
-        where: {userId: userId}
+    Withdrawal.findOne({
+        where: {
+            userId: userId,
+            status: 0
+        },
+        include: [{
+            model: User,
+            attributes: ['id', 'name']
+        }, {
+            model: AccountType,
+        }]
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
@@ -131,4 +155,37 @@ const updatePoint = async (userId, amount, action) => {
     } catch (err) {
         return err.toString();
     }
+}
+
+exports.registerAccountType = (req, res) => {
+    AccountType.create({
+        type: req.body.accountType,
+        createdDate: new Date()
+    }).then(data => {
+        return res.status(200).send({result: 'WITHDRAWAL_ACCOUNTTYPE_REGISTER_SUCCESS'});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
+
+exports.getAllAccountType = (req, res) => {
+    AccountType.findAll()
+        .then(data => {
+            return res.status(200).send({result: data});
+        })
+        .catch(err => {
+            return res.status(500).send({msg: err.toString()});
+        })
+}
+
+exports.deleteAccountType = (req, res) => {
+    AccountType.destroy({
+        where: {
+            id: req.body.accountTypeId
+        }
+    }).then(cnt => {
+        return res.status(200).send({result: cnt});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
 }

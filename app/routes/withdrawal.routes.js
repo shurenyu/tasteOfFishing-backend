@@ -39,4 +39,22 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.finishWithdrawal
     );
+
+    app.all(
+        "/withdrawal/account-type/register",
+        [authJwt.verifyToken],
+        controller.registerAccountType
+    );
+
+    app.all(
+        "/withdrawal/account-type/get-all",
+        [authJwt.verifyToken],
+        controller.getAllAccountType,
+    );
+
+    app.all(
+        "/withdrawal/account-type/delete",
+        [authJwt.verifyToken],
+        controller.deleteAccountType,
+    );
 };
