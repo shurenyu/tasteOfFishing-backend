@@ -41,8 +41,9 @@ exports.getAllWithdrawal = (req, res) => {
             model: AccountType,
         }]
     })
-        .then(data => {
-            return res.status(200).send({result: data});
+        .then(async data => {
+            const totalCount = await Withdrawal.count();
+            return res.status(200).send({result: data, totalCount: totalCount});
         }).catch(err => {
             return res.status(500).send({msg: err.toString()});
         })
@@ -76,23 +77,27 @@ exports.getWithdrawalByUser = (req, res) => {
             model: AccountType,
         }]
     }).then((data) => {
-        return res.status(200).send({result: data});
+        return res.status(200).send({result: 'WITHDRAWAL_GET_SUCCESS', data: data});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
 };
 
-exports.cancelWithdrawal = (req, res) => {
-    Withdrawal.destroy({
-        where: {
-            userId: req.body.userId,
-            status: 0,
-        }
-    }).then(cnt => {
-        return res.status(200).send({result: cnt});
-    }).catch(err => {
+exports.cancelWithdrawal = async (req, res) => {
+    try {
+        await updatePoint(req.body.userId, req.body.pointAmount, 1);
+
+        await Withdrawal.destroy({
+            where: {
+                userId: req.body.userId,
+                status: 0,
+            }
+        });
+
+        return res.status(200).send({result: 'WITHDRAWAL_CANCEL_SUCCESS'});
+    } catch (err) {
         return res.status(500).send({msg: err.toString()});
-    })
+    }
 }
 
 /**
@@ -112,11 +117,13 @@ exports.finishWithdrawal = async (req, res) => {
         const withdrawal = await Withdrawal.findOne({
             where: {id: withdrawalId}
         });
+        console.log('$$$$$$$$$$$: ', withdrawal.status)
 
-        await updateWithdrawalStatus(withdrawalId, status);
-
-        if (status > 1) {
-            await updatePoint(withdrawal.userId, withdrawal.pointAmount, 1);
+        if (withdrawal.status === 0) {
+            await updateWithdrawalStatus(withdrawalId, status);
+            if (status > 1) {
+                await updatePoint(withdrawal.userId, withdrawal.pointAmount, 1);
+            }
         }
 
         return res.status(200).send({result: 'WITHDRAWAL_FINISH_SUCCESS'});
