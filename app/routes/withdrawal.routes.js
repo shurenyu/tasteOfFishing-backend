@@ -41,6 +41,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/withdrawal/cancel",
+        [authJwt.verifyToken],
+        controller.cancelWithdrawal
+    );
+
+    app.all(
         "/withdrawal/account-type/register",
         [authJwt.verifyToken],
         controller.registerAccountType

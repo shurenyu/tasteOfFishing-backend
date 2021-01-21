@@ -82,6 +82,19 @@ exports.getWithdrawalByUser = (req, res) => {
     })
 };
 
+exports.cancelWithdrawal = (req, res) => {
+    Withdrawal.destroy({
+        where: {
+            userId: req.body.userId,
+            status: 0,
+        }
+    }).then(cnt => {
+        return res.status(200).send({result: cnt});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
+
 /**
  *
  * @param req keys: {withdrawalId, status}
