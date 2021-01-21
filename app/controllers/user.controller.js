@@ -31,14 +31,14 @@ exports.updateProfile = async (req, res) => {
     try {
         const profileId = req.body.profileId;
         const userId = req.body.userId;
-        const filter = profileId ? {id: profileId} : userId ? {userId: userId} : null;
-
-        if (filter === null) {
-            return res.status(404).send({msg: 'USER.PROFILE_NOT_FOUND'});
-        }
+        // const filter = profileId ? {id: profileId} : userId ? {userId: userId} : null;
+        //
+        // if (filter === null) {
+        //     return res.status(404).send({msg: 'USER.PROFILE_NOT_FOUND'});
+        // }
 
         const profile = await Profile.findOne({
-            where: filter
+            where: {userId: userId}
         });
 
         if (!profile) {
