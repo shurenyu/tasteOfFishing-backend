@@ -46,6 +46,7 @@ exports.updateProfile = async (req, res) => {
         }
 
         const keys = Object.keys(req.body);
+        console.log(keys)
         for (const key of keys) {
             if (key !== 'profileId' && key !== 'userId') {
                 profile[key] = req.body[key];

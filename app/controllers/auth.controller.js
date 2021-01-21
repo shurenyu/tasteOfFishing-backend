@@ -119,7 +119,7 @@ exports.register = async (req, res) => {
                         // await sendCode(user, res);
                         const device = req.body.device || '';
                         const token = await generateToken(user);
-                        return res.status(200).json({accessToken: token});
+                        return res.status(200).json({accessToken: token, userInfo: user});
                     })
                     .catch(err => {
                         return res.status(500).json({msg: err.toString()});
