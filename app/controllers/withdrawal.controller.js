@@ -17,10 +17,10 @@ exports.applyWithdrawal = async (req, res) => {
             createdDate: new Date(),
         };
 
-        await Withdrawal.create(data);
+        const response = await Withdrawal.create(data);
         await updatePoint(req.body.userId, req.body.pointAmount, 0);
 
-        return res.status(200).send({result: 'WITHDRAWAL_REGISTER_SUCCESS'});
+        return res.status(200).send({result: 'WITHDRAWAL_REGISTER_SUCCESS', data: response});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }
