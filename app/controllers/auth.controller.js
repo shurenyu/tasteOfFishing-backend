@@ -116,10 +116,10 @@ exports.register = async (req, res) => {
                 newUser.password = hash;
                 User.create(newUser)
                     .then(async user => {
-                        await sendCode(user, res);
-                        // const device = req.body.device || '';
-                        // const token = await generateToken(user);
-                        // return res.status(200).json({accessToken: token});
+                        // await sendCode(user, res);
+                        const device = req.body.device || '';
+                        const token = await generateToken(user);
+                        return res.status(200).json({accessToken: token});
                     })
                     .catch(err => {
                         return res.status(500).json({msg: err.toString()});
@@ -130,6 +130,7 @@ exports.register = async (req, res) => {
         return res.status(500).json({msg: err.toString()});
     }
 };
+
 
 /**
  * AdminUser Login
@@ -288,6 +289,7 @@ exports.verifyCodeAndSignUp = async (req, res) => {
         return res.status(500).send({message: err.message});
     }
 }
+
 
 /**
  * Change password

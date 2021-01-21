@@ -24,7 +24,6 @@ module.exports = function (app) {
         controller.appLogin
     );
 
-
     app.all(
         "/auth/forgot-password",
         controller.forgotPassword
