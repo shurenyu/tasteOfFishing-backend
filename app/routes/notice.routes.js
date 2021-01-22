@@ -46,4 +46,22 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.deleteNotice
     );
+
+    app.all(
+        "/notice/type/register",
+        [authJwt.verifyToken],
+        controller.registerNoticeType
+    );
+
+    app.all(
+        "/notice/type/get-all",
+        [authJwt.verifyToken],
+        controller.getAllNoticeType
+    );
+
+    app.all(
+        "/notice/type/delete",
+        [authJwt.verifyToken],
+        controller.deleteNoticeType
+    );
 };

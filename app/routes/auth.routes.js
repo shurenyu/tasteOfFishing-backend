@@ -68,14 +68,4 @@ module.exports = function (app) {
         "/auth/code-for-email/verify",
         controller.verifyCodeForEmail
     )
-
-    app.all(
-        "/auth/phone/verify",
-        controller.verifyPhoneNumber
-    )
-
-    app.all(
-        "/auth/code-for-phone/verify",
-        controller.verifyCodeForPhoneNumber
-    )
 };

@@ -1,5 +1,5 @@
-// const config = require("../config/db.local.config.js");
-const config = require("../config/db.config.js");
+const config = require("../config/db.local.config.js");
+// const config = require("../config/db.config.js");
 
 const Sequelize = require("sequelize");
 const sequelize = new Sequelize(
@@ -37,6 +37,7 @@ db.fish = require("./fish.model")(sequelize, Sequelize);
 db.fishImage = require("./fishImage.model")(sequelize, Sequelize);
 db.fishType = require("./fishType.model")(sequelize, Sequelize);
 db.notice = require("./notice.model")(sequelize, Sequelize);
+db.noticeType = require("./noticeType.model")(sequelize, Sequelize);
 db.phoneVerification = require("./phoneVerification.model")(sequelize, Sequelize);
 db.post = require("./post.model")(sequelize, Sequelize);
 db.postComment = require("./postComment.model")(sequelize, Sequelize);

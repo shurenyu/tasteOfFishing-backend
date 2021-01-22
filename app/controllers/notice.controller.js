@@ -1,5 +1,6 @@
 const db = require("../models");
 const Notice = db.notice;
+const NoticeType = db.noticeType;
 
 exports.registerNotice = (req, res) => {
     const newNotice = {
@@ -19,10 +20,12 @@ exports.registerNotice = (req, res) => {
 exports.getAllNotice = (req, res) => {
     Notice.findAll({
         limit: req.body.limit || 1000000,
-        offset: req.body.offset || 0
+        offset: req.body.offset || 0,
+        order: [['createdDate', 'DESC']],
     })
-        .then(data => {
-            return res.status(200).send({result: data});
+        .then(async data => {
+            const count = await Notice.count();
+            return res.status(200).send({result: data, totalCount: count});
         }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
@@ -88,3 +91,37 @@ exports.deleteNotice = (req, res) => {
         return res.status(500).send({msg: err.toString()});
     })
 };
+
+exports.registerNoticeType = (req, res) => {
+    NoticeType.create({
+        type: req.body.noticeType,
+        createdDate: new Date()
+    }).then((data) => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
+
+exports.getAllNoticeType = (req, res) => {
+    NoticeType.findAll()
+        .then(data => {
+            return res.status(200).send({result: data});
+        })
+        .catch(err => {
+            return res.status(500).send({msg: err.toString()});
+        })
+}
+
+exports.deleteNoticeType = (req, res) => {
+    NoticeType.destroy({
+        where: {
+            id: req.body.noticeTypeId
+        }
+    }).then(cnt => {
+        return res.status(200).send({result: cnt});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
+
