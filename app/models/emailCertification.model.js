@@ -1,5 +1,8 @@
 module.exports = (sequelize, Sequelize) => {
     return sequelize.define("emailCertification", {
+        userId: {
+            type: Sequelize.INTEGER(21)
+        },
         email: {
             type: Sequelize.STRING(50)
         },

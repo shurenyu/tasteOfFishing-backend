@@ -425,8 +425,8 @@ exports.verifyEmail = async (req, res) => {
 }
 
 /**
- *
- * @param req keys: {email, code}
+ * Email Verification for Withdrawal
+ * @param req keys: {userId, email, code}
  * @param res
  * @returns {Promise<*>}
  */
@@ -444,7 +444,13 @@ exports.verifyCodeForEmail = async (req, res) => {
         } else if (info.code !== req.body.code) {
             return res.status(400).send({msg: 'AUTH.VERIFY_CODE_INCORRECT'});
         } else {
-            return res.status(200).send({result: 'AUTH.VERIFY_CODE_SUCCESS'});
+            const profile = await Profile({
+                where: {userId: info.userId}
+            });
+            profile.withdrawEmail = req.body.email;
+            profile.updatedDate = new Date();
+            profile.save();
+            return res.status(200).send({result: 'AUTH.VERIFY_CODE_SUCCESS', data: profile});
         }
     } catch (err) {
         return res.status(500).send({message: err.message});
