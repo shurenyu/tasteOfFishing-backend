@@ -21,8 +21,8 @@ const testMailConfig = {
     }
 };
 
-const transporter = nodeMailer.createTransport(mailConfig);
-// const transporter = nodeMailer.createTransport(testMailConfig);
+// const transporter = nodeMailer.createTransport(mailConfig);
+const transporter = nodeMailer.createTransport(testMailConfig);
 
 const sendMail = (res, to, user_name, userId, subject, content) => {
     transporter.sendMail({
