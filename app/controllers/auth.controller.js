@@ -184,7 +184,7 @@ exports.appLogin = async (req, res) => {
  * @returns {token}
  */
 exports.socialLogin = async (req, res) => {
-    console.log("socialLogin")
+    console.log("socialLogin", req.body)
     try {
         let user = await User.findOne({
             where: {
@@ -196,7 +196,8 @@ exports.socialLogin = async (req, res) => {
             user = await User.create({
                 name: req.body.name,
                 email: req.body.email,
-                type: req.body.type
+                type: req.body.type,
+                createdDate: new Date()
             });
         }
 
