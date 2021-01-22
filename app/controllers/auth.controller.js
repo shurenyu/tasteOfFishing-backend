@@ -421,6 +421,8 @@ exports.verifyEmail = async (req, res) => {
     sendMail(
         res,
         email,
+        '',
+        userId,
         'Email Certification',
         makeMailFromTemplate({
             header: `안녕하세요.`,
