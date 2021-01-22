@@ -387,12 +387,19 @@ exports.getUserInfo = (req, res) => {
         });
 };
 
+/**
+ *
+ * @param req
+ * @param res
+ * @returns {Promise<void>}
+ */
 exports.verifyEmail = async (req, res) => {
     const email = req.body.email.toLowerCase();
-
+    const userId = req.body.userId;
     const code = await generateCode(6);
 
     const data = {
+        userId: userId,
         email: email,
         code: code,
         updatedDate: new Date(),
@@ -403,6 +410,7 @@ exports.verifyEmail = async (req, res) => {
     });
 
     if (info) {
+        info.userId = userId;
         info.code = code;
         info.updatedDate = new Date();
         await info.save();
