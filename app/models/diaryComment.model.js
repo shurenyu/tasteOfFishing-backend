@@ -1,6 +1,6 @@
 module.exports = (sequelize, Sequelize) => {
     return sequelize.define("diaryComment", {
-        diaryId: {
+        fishId: {
             type: Sequelize.INTEGER(21)
         },
         userId: {

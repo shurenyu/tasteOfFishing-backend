@@ -47,6 +47,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/competition/search",
+        [authJwt.verifyToken],
+        controller.searchCompetitions
+    )
+
+    app.all(
         "/competition/get-progressing-by-user",
         [authJwt.verifyToken],
         controller.getProgressingCompetitionsByUser
@@ -61,7 +67,7 @@ module.exports = function (app) {
     app.all(
         "/competition/get-new",
         [authJwt.verifyToken],
-        controller.getNewCompetiton
+        controller.getNewCompetition
     );
 
     app.all(
@@ -80,6 +86,12 @@ module.exports = function (app) {
         "/competition/get-competition-by-multi-filter",
         [authJwt.verifyToken],
         controller.getCompetitionByMultiFilter
+    );
+
+    app.all(
+        "/diary/get-ranking/contest",
+        [authJwt.verifyToken],
+        controller.getCompetitionRanking
     );
 
 };

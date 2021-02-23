@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-    return sequelize.define("diary", {
+    return sequelize.define("userCompetition", {
         userId: {
             type: Sequelize.INTEGER(21)
         },
@@ -26,17 +26,10 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DOUBLE,
             defaultValue: 100000,
         },
-        // text: {
-        //     type: Sequelize.STRING(2000)
-        // },
         createdDate: {
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW
         },
-        updatedDate: {
-            type: Sequelize.DATE,
-            defaultValue: Sequelize.NOW
-        }
     }, {
         timestamps: false,
         underscored: false,

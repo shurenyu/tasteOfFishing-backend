@@ -47,9 +47,9 @@ module.exports = function (app) {
     );
 
     app.all(
-        "/user/get-full-info",
+        "/user/get-my-info",
         [authJwt.verifyToken],
-        controller.getFullUserInfo
+        controller.getMyInfo
     );
 
     app.all(
@@ -59,14 +59,21 @@ module.exports = function (app) {
     );
 
     app.all(
-        "/user/record/get",
+        "/user/attend-competition",
         [authJwt.verifyToken],
-        controller.getRecordByUser
+        controller.attendCompetition
     );
+
+    // app.all(
+    //     "/user/record/get",
+    //     [authJwt.verifyToken],
+    //     controller.getRecordByUser
+    // );
 
     app.all(
         "/test",
         [authJwt.verifyToken],
         controller.testing
     );
+
 };

@@ -51,4 +51,10 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.deleteReport
     );
+
+    app.all(
+        "/report/get-by-filter",
+        [authJwt.verifyToken],
+        controller.getReportByFilter
+    );
 };

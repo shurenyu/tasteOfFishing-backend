@@ -41,6 +41,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/diary/get-by-user",
+        [authJwt.verifyToken],
+        controller.getDiariesByUser
+    );
+
+    app.all(
         "/fish/get-by-multi-filter",
         [authJwt.verifyToken],
         controller.getFishesByMultiFilter
@@ -63,4 +69,36 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.updateFish
     );
+
+    app.all(
+        "/diary/update",
+        [authJwt.verifyToken],
+        controller.updateFish
+    );
+
+    app.all(
+        "/get-ranking/realtime",
+        [authJwt.verifyToken],
+        controller.getRankingRealtime
+    );
+
+    app.all(
+        "/fish/add-comment",
+        [authJwt.verifyToken],
+        controller.addFishComment
+    );
+
+    app.all(
+        "/fish/delete-comment",
+        [authJwt.verifyToken],
+        controller.deleteFishComment
+    );
+
+
+    app.all(
+        "/diary/search",
+        [authJwt.verifyToken],
+        controller.searchDiary
+    );
+
 };

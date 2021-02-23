@@ -93,4 +93,16 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.deletePostCommentReply
     );
+
+    app.all(
+        "/post/images/register",
+        [authJwt.verifyToken],
+        controller.registerPostImages
+    );
+
+    app.all(
+        "/post/search",
+        [authJwt.verifyToken],
+        controller.searchPosts
+    );
 };

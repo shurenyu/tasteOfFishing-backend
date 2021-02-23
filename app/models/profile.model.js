@@ -28,12 +28,23 @@ module.exports = (sequelize, Sequelize) => {
         },
         pointAmount: {
             type: Sequelize.INTEGER(20),
+            defaultValue: 0,
         },
         level: {
-            type: Sequelize.INTEGER(2),
+            type: Sequelize.INTEGER(4),
+            defaultValue: 0,
         },
-        style: {
-            type: Sequelize.STRING(30),
+        exp: {
+            type: Sequelize.INTEGER(10),
+            defaultValue: 0,
+        },
+        userStyleId: {
+            type: Sequelize.INTEGER(11),
+            defaultValue: '',
+        },
+        mainFishType: {
+            type: Sequelize.INTEGER(11),
+            defaultValue: 0,
         },
         createdDate: {
             type: Sequelize.DATE,

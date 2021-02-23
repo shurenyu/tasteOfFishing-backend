@@ -1,17 +1,21 @@
 const db = require("../models");
 const Report = db.report;
+const User = db.user;
 
 exports.registerReport = (req, res) => {
     const newReport = {
         userId: req.body.userId,
         reporterId: req.body.reporterId,
+        type: req.body.type,
         content: req.body.content,
+        status: 1,
         createdDate: new Date(),
+        updatedDate: new Date(),
     };
 
     Report.create(newReport)
         .then(data => {
-            return res.status(200).send({result: 'REPORT_REGISTER_SUCCESS'});
+            return res.status(200).send({result: 'REPORT_REGISTER_SUCCESS', data: data.id});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});
@@ -93,8 +97,39 @@ exports.deleteReport = (req, res) => {
     Report.destroy({
         where: {id: reportId}
     }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: 'REPORT_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
 };
+
+exports.getReportByFilter = (req, res) => {
+    // Report.hasOne(User, {as: 'user', sourceKey: 'userId', foreignKey: 'id'});
+    // Report.hasOne(User, {as: 'reporter', sourceKey: 'reporterId', foreignKey: 'id'});
+
+    let filter = {};
+    if (req.body.status) filter.status = req.body.status;
+
+    Report.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        where: filter,
+        include: [{
+            model: User,
+            as: 'user',
+            attributes: ['id', 'name']
+        }, {
+            model: User,
+            as: 'reporter',
+            attributes: ['id', 'name']
+        }]
+    }).then(async data => {
+        const count = await Report.count({where: filter});
+        return res.status(200).send({result: data, totalCount: count});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}

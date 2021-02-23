@@ -4,7 +4,7 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING(30)
         },
         content: {
-            type: Sequelize.STRING(100)
+            type: Sequelize.TEXT
         },
         createdDate: {
             type: Sequelize.DATE,

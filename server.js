@@ -46,13 +46,15 @@ require('./app/routes/user.routes')(app);
 require('./app/routes/competition.routes')(app);
 require('./app/routes/post.routes')(app);
 require('./app/routes/configuration.routes')(app);
-require('./app/routes/diary.routes')(app);
+// require('./app/routes/diary.routes')(app);
 require('./app/routes/fish.routes')(app);
 require('./app/routes/notice.routes')(app);
 require('./app/routes/question.routes')(app);
 require('./app/routes/report.routes')(app);
 require('./app/routes/terms.routes')(app);
 require('./app/routes/withdrawal.routes')(app);
+require('./app/routes/dashboard.routes')(app);
+require('./app/routes/posCode.routes')(app);
 
 
 // set port, listen for requests

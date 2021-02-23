@@ -51,4 +51,10 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.addCommentToAnswer
     );
+
+    app.all(
+        "/question/get-by-filter",
+        [authJwt.verifyToken],
+        controller.getQuestionsByFilter
+    );
 };

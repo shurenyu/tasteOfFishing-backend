@@ -26,6 +26,7 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.accountType = require("./accountType.model")(sequelize, Sequelize);
+db.admCode = require("./admCode.model")(sequelize, Sequelize);
 db.answerComment = require("./answerComment.model")(sequelize, Sequelize);
 db.banner = require("./banner.model")(sequelize, Sequelize);
 db.competition = require("./competition.model")(sequelize, Sequelize);
@@ -39,30 +40,44 @@ db.fishType = require("./fishType.model")(sequelize, Sequelize);
 db.notice = require("./notice.model")(sequelize, Sequelize);
 db.noticeType = require("./noticeType.model")(sequelize, Sequelize);
 db.phoneVerification = require("./phoneVerification.model")(sequelize, Sequelize);
+db.posCode = require("./posCode.model")(sequelize, Sequelize);
 db.post = require("./post.model")(sequelize, Sequelize);
+db.postImage = require("./postImage.model")(sequelize, Sequelize);
 db.postComment = require("./postComment.model")(sequelize, Sequelize);
 db.postCommentReply = require("./postCommentReply.model")(sequelize, Sequelize);
 db.profile = require("./profile.model")(sequelize, Sequelize);
 db.question = require("./question.model")(sequelize, Sequelize);
 db.quickMemo = require("./quickMemo.model")(sequelize, Sequelize);
 db.report = require("./report.model")(sequelize, Sequelize);
-db.style = require("./style.model")(sequelize, Sequelize);
 db.term = require("./terms.model")(sequelize, Sequelize);
 db.user = require("./user.model")(sequelize, Sequelize);
+db.userCompetition = require("./userCompetition.model")(sequelize, Sequelize);
+db.userRecord = require("./userRecord.model")(sequelize, Sequelize);
+db.userStyle = require("./userStyle.model")(sequelize, Sequelize);
 db.withdrawal = require("./withdrawal.model")(sequelize, Sequelize);
-
 
 db.test = require("./test.model")(sequelize, Sequelize);
 
-// db.profile.belongsTo(db.user, {foreignKey: 'id'});
 db.user.hasOne(db.profile);
 db.competition.hasOne(db.fishType, {sourceKey: 'fishTypeId', foreignKey: 'id'});
 db.fish.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
 db.fish.hasOne(db.competition, {sourceKey: 'competitionId', foreignKey: 'id'});
 db.fish.hasOne(db.fishType, {sourceKey: 'fishTypeId', foreignKey: 'id'});
 db.fish.hasMany(db.fishImage);
-db.diary.hasOne(db.competition, {sourceKey: 'competitionId', foreignKey: 'id'});
-db.diary.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
-
+db.fish.hasMany(db.diaryComment);
+db.diaryComment.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
+db.userCompetition.hasOne(db.competition, {sourceKey: 'competitionId', foreignKey: 'id'});
+db.userCompetition.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
+db.notice.hasOne(db.noticeType, {sourceKey: 'noticeTypeId', foreignKey: 'id'});
+db.post.hasMany(db.postImage);
+db.post.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
+db.post.hasMany(db.postComment);
+db.postComment.hasOne(db.postCommentReply);
+db.postComment.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
+db.report.hasOne(db.user, {as: 'user', sourceKey: 'userId', foreignKey: 'id'});
+db.report.hasOne(db.user, {as: 'reporter', sourceKey: 'reporterId', foreignKey: 'id'});
+db.userRecord.hasOne(db.fish, {sourceKey: 'fishId', foreignKey: 'id'});
+db.profile.hasOne(db.userStyle, {sourceKey: 'userStyleId', foreignKey: 'id'});
+// db.userRecord.hasOne(db.fishType, {sourceKey: 'fishTypeId', foreignKey: 'id'});
 
 module.exports = db;

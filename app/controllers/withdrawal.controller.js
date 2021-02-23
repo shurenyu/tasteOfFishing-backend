@@ -206,6 +206,9 @@ exports.deleteAccountType = (req, res) => {
             id: req.body.accountTypeId
         }
     }).then(cnt => {
+        if (cnt === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: cnt});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});

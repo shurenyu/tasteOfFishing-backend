@@ -1,17 +1,20 @@
 const db = require("../models");
 const Question = db.question;
 const AnswerComment = db.answerComment;
+const User = db.user;
 
 exports.registerQuestion = (req, res) => {
     const newQuestion = {
         question: req.body.question,
+        content: req.body.content,
         userId: req.body.userId,
-        createdDate: new Date(),
+        status: 2,
+        questionDate: new Date(),
     };
 
     Question.create(newQuestion)
         .then(data => {
-            return res.status(200).send({result: 'QUESTION_REGISTER_SUCCESS'});
+            return res.status(200).send({result: 'QUESTION_REGISTER_SUCCESS', data: data.id});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});
@@ -19,10 +22,36 @@ exports.registerQuestion = (req, res) => {
 };
 
 exports.getAllQuestion = (req, res) => {
-    Question.findAll()
+    Question.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['questionDate', 'DESC']]
+    })
         .then(data => {
             return res.status(200).send({result: data});
         }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+};
+
+exports.getQuestionsByFilter = (req, res) => {
+    Question.hasOne(User, {sourceKey: 'userId', foreignKey: 'id'});
+
+    let filter = {};
+    if (req.body.status) filter.status = req.body.status;
+
+    Question.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        where: filter,
+        include: [{
+            model: User,
+            attributes: ['id', 'name'],
+        }]
+    }).then(async data => {
+        const count = await Question.count({where: filter});
+        return res.status(200).send({result: data, totalCount: count});
+    }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
 };
@@ -50,7 +79,12 @@ exports.updateQuestion = async (req, res) => {
             return res.status(404).send({msg: 'QUESTION_NOT_FOUND'});
         }
 
-        question.question = req.body.question;
+        const keys = Object.keys(req.body);
+        for (const key of keys) {
+            if (key !== 'questionId') {
+                question[key] = req.body[key];
+            }
+        }
         await question.save();
 
         return res.status(200).send({result: 'QUESTION_UPDATE_SUCCESS'});
@@ -62,10 +96,14 @@ exports.updateQuestion = async (req, res) => {
 
 exports.deleteQuestion = (req, res) => {
     const questionId = req.body.questionId;
+    console.log('questionId: ', questionId)
 
     Question.destroy({
         where: {id: questionId}
     }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: 'QUESTION_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
@@ -85,6 +123,8 @@ exports.registerAnswer = async (req, res) => {
         }
 
         question.answer = req.body.answer;
+        question.answerDate = new Date();
+        question.status = 1;
         await question.save();
 
         return res.status(200).send({result: 'QUESTION_ANSWER_ADD_SUCCESS'});
@@ -104,7 +144,7 @@ exports.addCommentToAnswer = (req, res) => {
 
     AnswerComment.create(newComment)
         .then(data => {
-            return res.status(200).send({result: 'ANSWER_COMMENT_REGISTER_SUCCESS'});
+            return res.status(200).send({result: 'ANSWER_COMMENT_REGISTER_SUCCESS', data: data.id});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});

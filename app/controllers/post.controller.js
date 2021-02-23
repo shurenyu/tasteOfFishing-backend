@@ -2,38 +2,70 @@ const db = require("../models");
 const Post = db.post;
 const PostComment = db.postComment;
 const PostCommentReply = db.postCommentReply;
+const PostImage = db.postImage;
+const User = db.user;
+const Profile = db.profile;
+const Op = db.Sequelize.Op;
 
-exports.registerPost = (req, res) => {
-    const newPost = {
-        userId: req.body.userId,
-        image: req.body.image,
-        content: req.body.content,
-        createdDate: new Date(),
-    };
+exports.registerPost = async (req, res) => {
+    try {
+        const data = await Post.create({
+            userId: req.body.userId,
+            content: req.body.content,
+            createdDate: new Date(),
+        });
 
-    Post.create(newPost)
-        .then(data => {
-            return res.status(200).send({result: 'POST_REGISTER_SUCCESS'});
-        })
-        .catch(err => {
-            return res.status(500).send({msg: err.toString()});
-        })
+        const images = req.body.images.map(x => ({
+            postId: data.id,
+            image: x,
+        }));
+
+        await PostImage.bulkCreate(images, {returning: true});
+
+        const profile = await Profile.findOne({
+            where: {userId: req.body.userId}
+        });
+
+        profile.exp += 100;
+        profile.level = Math.floor(profile.exp / 1000);
+        await profile.save();
+
+        return res.status(200).send({result: 'POST_REGISTER_SUCCESS', data: data.id});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
 };
+
+exports.registerPostImages = (req, res) => {
+    PostImage.created({
+        postId: req.body.postId,
+        image: req.body.image,
+    }).then(data => {
+        return res.status(200).send({result: 'POST_IMAGE_REGISTER_SUCCESS', data: data.id});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
 
 exports.getPostByUser = async (req, res) => {
     try {
         const userId = req.body.userId;
-        console.log("userId: ", userId)
 
         const count = await Post.count({
             where: {userId: userId}
         });
-        console.log('count: ', count)
 
         const data = await Post.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
-            where: {userId: userId}
+            order: [['createdDate', 'DESC']],
+            where: {userId: userId},
+            include: [{
+                model: PostImage
+            }, {
+                model: PostComment,
+                attributes: ['id'],
+            }]
         })
         console.log(data.data)
 
@@ -46,7 +78,29 @@ exports.getPostByUser = async (req, res) => {
 exports.getPostById = (req, res) => {
     const postId = req.body.postId;
     Post.findOne({
-        where: {id: postId}
+        where: {id: postId},
+        include: [{
+            model: User,
+            attributes: ['id', 'name'],
+            include: [{
+                model: Profile,
+                attributes: ['id', 'avatar']
+            }]
+        }, {
+            model: PostImage,
+        }, {
+            model: PostComment,
+            include: [{
+                model: PostCommentReply,
+            }, {
+                model: User,
+                attributes: ['id', 'name'],
+                include: [{
+                    model: Profile,
+                    attributes: ['id', 'avatar']
+                }]
+            }]
+        }]
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
@@ -55,13 +109,58 @@ exports.getPostById = (req, res) => {
 };
 
 exports.getAllPosts = (req, res) => {
-    Post.findAll()
-        .then(data => {
-            return res.status(200).send({result: data});
+    Post.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['createdDate', 'DESC']],
+        include: [{
+            model: User,
+            attributes: ['id', 'name']
+        }, {
+            model: PostImage
+        }, {
+            model: PostComment,
+            attributes: ['id'],
+        }],
+    })
+        .then(async data => {
+            const count = await Post.count();
+            return res.status(200).send({result: data, totalCount: count});
         }).catch(err => {
             return res.status(500).send({msg: err.toString()});
         })
 };
+
+exports.searchPosts = (req, res) => {
+    const keyword = req.body.keyword;
+    Post.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['createdDate', 'DESC']],
+        include: [{
+            model: User,
+            attributes: ['id', 'name']
+        }, {
+            model: PostImage
+        }],
+        where: {
+            content: {
+                [Op.like]: '%' + keyword + '%'
+            }
+        }
+    }).then(async data => {
+        const count = await Post.count({
+            where: {
+                content: {
+                    [Op.like]: '%' + keyword + '%'
+                }
+            }
+        });
+        return res.status(200).send({result: data, totalCount: count});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
 
 exports.updatePost = async (req, res) => {
     const postId = req.body.postId;
@@ -83,6 +182,20 @@ exports.updatePost = async (req, res) => {
         }
         await post.save();
 
+        if (req.body.images) {
+            const imageList = JSON.parse(req.body.images);
+            const images = imageList.map(x => ({
+                postId: postId,
+                image: x,
+            }));
+
+            await PostImage.destroy({
+                where: {postId: postId}
+            });
+
+            await PostImage.bulkCreate(imageList, {returning: true});
+        }
+
         return res.status(200).send({result: 'POST_UPDATE_SUCCESS'});
 
     } catch (err) {
@@ -96,6 +209,9 @@ exports.deletePost = (req, res) => {
     Post.destroy({
         where: {id: postId}
     }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: 'POST_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
@@ -111,8 +227,16 @@ exports.registerPostComment = (req, res) => {
     }
 
     PostComment.create(data)
-        .then((data) => {
-            return res.status(200).send({result: 'POST_COMMENT_REGISTER_SUCCESS'});
+        .then(async (data) => {
+            const profile = await Profile.findOne({
+                where: {userId: req.body.userId}
+            });
+
+            profile.exp += 50;
+            profile.level = Math.floor(profile.exp / 1000);
+            await profile.save();
+
+            return res.status(200).send({result: 'POST_COMMENT_REGISTER_SUCCESS', data: data.id});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});
@@ -163,6 +287,9 @@ exports.deletePostComment = (req, res) => {
     PostComment.destroy({
         where: {id: postCommentId}
     }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: 'POST_COMMENT_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
@@ -179,7 +306,7 @@ exports.registerPostCommentReply = (req, res) => {
 
     PostCommentReply.create(data)
         .then((data) => {
-            return res.status(200).send({result: 'POST_COMMENT_REPLY_REGISTER_SUCCESS'});
+            return res.status(200).send({result: 'POST_COMMENT_REPLY_REGISTER_SUCCESS', data: data.id});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});
@@ -230,6 +357,9 @@ exports.deletePostCommentReply = (req, res) => {
     PostCommentReply.destroy({
         where: {id: postCommentReplyId}
     }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: 'POST_COMMENT_REPLY_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});

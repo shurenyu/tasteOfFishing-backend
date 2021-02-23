@@ -1,7 +1,7 @@
 module.exports = (sequelize, Sequelize) => {
     return sequelize.define("competition", {
         type: {
-            type: Sequelize.STRING(10)
+            type: Sequelize.INTEGER(4),
         },
         name: {
             type: Sequelize.STRING(256)
@@ -37,7 +37,8 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER(21)
         },
         mode: {
-            type: Sequelize.INTEGER(2)
+            type: Sequelize.INTEGER(2),
+            defaultValue: 0,
         },
         rankFishNumber: {
             type: Sequelize.INTEGER(10)
@@ -52,13 +53,16 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DOUBLE
         },
         reward1: {
-            type: Sequelize.INTEGER(20)
+            type: Sequelize.INTEGER(20),
+            defaultValue: 0,
         },
         reward2: {
-            type: Sequelize.INTEGER(20)
+            type: Sequelize.INTEGER(20),
+            defaultValue: 0,
         },
         reward3: {
-            type: Sequelize.INTEGER(20)
+            type: Sequelize.INTEGER(20),
+            defaultValue: 0,
         },
         attendCost: {
             type: Sequelize.INTEGER(20)

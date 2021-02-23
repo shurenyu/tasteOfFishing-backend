@@ -70,6 +70,9 @@ exports.deleteFishType = (req, res) => {
     FishType.destroy({
         where: {id: fishTypeId}
     }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: 'FISH_TYPE_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
@@ -81,12 +84,13 @@ exports.registerBanner = (req, res) => {
     const data = {
         title: req.body.title,
         subtitle: req.body.subtitle,
+        link: req.body.link,
         image: req.body.image,
     };
 
     Banner.create(data)
         .then(data => {
-            return res.status(200).send({result: 'BANNER_REGISTER_SUCCESS'});
+            return res.status(200).send({result: 'BANNER_REGISTER_SUCCESS', data: data});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});
@@ -107,10 +111,12 @@ exports.getAllBanner = (req, res) => {
 
 exports.deleteBanner = (req, res) => {
     const bannerId = req.body.bannerId;
-
-    FishType.destroy({
+    Banner.destroy({
         where: {id: bannerId}
     }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: 'BANNER_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});

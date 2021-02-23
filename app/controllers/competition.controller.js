@@ -1,8 +1,25 @@
 const db = require("../models");
+const schedule = require('node-schedule');
 const Competition = db.competition;
-const Diary = db.diary;
+const UserCompetition = db.userCompetition;
+const Fish = db.fish;
 const FishType = db.fishType;
+const User = db.user;
+const Profile = db.profile;
+const UserStyle = db.userStyle;
 const Op = db.Sequelize.Op;
+
+const validCompetition = (start, end) => {
+    const startDate = new Date(start).getTime();
+    const endDate = new Date(end).getTime();
+    const now = new Date().getTime();
+    console.log(start)
+    console.log(end)
+
+    if (startDate > endDate) return false;
+    return startDate >= now;
+
+}
 
 /**
  * Register Competition
@@ -11,19 +28,51 @@ const Op = db.Sequelize.Op;
  * @returns {token}
  */
 exports.registerCompetition = async (req, res) => {
-    const newCompetition = {
-        ...req.body
-    };
+    if (!validCompetition(req.body.startDate, req.body.endDate)) {
+        return res.status(400).send({result: 'INVALID_DATE'});
+    }
 
-    Competition.create(newCompetition)
-        .then(async data => {
-            return res.status(200).send({result: 'COMPETITION.REGISTER'});
+    try {
+        const newCompetition = {
+            ...req.body
+        };
+
+        const competition = await Competition.create(newCompetition);
+
+        const endDate = new Date(competition.endDate);
+        const job = schedule.scheduleJob(endDate, async function () {
+            // updated user's style
+            console.log('this is end****************************', competition.id);
+
+            const sortingKey = ['DESC', 'DESC', 'DESC', 'DESC', 'ASC'];
+
+            if (competition.mode > 0) {
+                const rank = db.Sequelize.literal(`(RANK() OVER (ORDER BY record${competition.mode} ${sortingKey[competition.mode - 1]}))`);
+                const winners = await UserCompetition.findAll({
+                    // limit: 3,
+                    order: [[`record${competition.mode}`, sortingKey[competition.mode - 1]]],
+                    attributes: ['id', 'userId', `record${competition.mode}`, [rank, 'rank']],
+                    where: {
+                        competitionId: competition.id,
+                        rank: 1,
+                    },
+                });
+                const firstId = winners[0].userId;
+                const secondId = winners[1].userId;
+                const thirdId = winners[2].userId;
+                const profile = await Profile.findOne({
+                    where: {userId: firstId}
+                });
+            }
+
         })
-        .catch(err => {
-            return res.status(500).send({msg: err.toString()});
-        });
-};
 
+        return res.status(200).send({result: 'COMPETITION.REGISTER', data: competition.id});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+
+};
 
 exports.updateCompetition = async (req, res) => {
     try {
@@ -51,16 +100,75 @@ exports.updateCompetition = async (req, res) => {
     }
 };
 
-exports.getCompetitionById = (req, res) => {
-    const competitionId = req.body.competitionId;
+// exports.getCompetitionById = async (req, res) => {
+//     const competitionId = req.body.competitionId;
+//
+//     const cntUser = await Diary.count({
+//         where: {id: competitionId}
+//     });
+//
+//     Competition.findOne({
+//         where: {id: competitionId}
+//     }).then(async data => {
+//         return res.status(200).send({result: {...data.dataValues, userCount: cntUser}});
+//     }).catch(err => {
+//         return res.status(500).send({msg: err.toString()});
+//     })
+// };
 
-    Competition.findOne({
-        where: {id: competitionId}
-    }).then(data => {
-        return res.status(200).send({result: data});
-    }).catch(err => {
+exports.getCompetitionById = async (req, res) => {
+    try {
+        const competitionId = req.body.competitionId;
+        const userId = req.body.userId; //login user id
+
+        const competition = await Competition.findOne({
+            where: {id: competitionId},
+            include: [{
+                model: FishType,
+                attributes: ['id', 'name']
+            }]
+        });
+
+        const cntUser = await UserCompetition.count({
+            where: {competitionId: competitionId}
+        });
+
+        const sortingKey = ['DESC', 'DESC', 'DESC', 'DESC', 'ASC'];
+
+        let winners = [];
+        if (competition.mode > 0) {
+            winners = await UserCompetition.findAll({
+                limit: 3,
+                order: [[`record${competition.mode}`, sortingKey[competition.mode - 1]]],
+                attributes: ['id', `record${competition.mode}`],
+                where: {
+                    competitionId: competitionId,
+                },
+                include: [{
+                    model: User,
+                    attributes: ['id', 'name'],
+                    include: [{
+                        model: Profile,
+                        attributes: ['id', 'username', 'level', 'avatar'],
+                        include: [{
+                            model: UserStyle
+                        }]
+                    }]
+                }]
+            });
+        }
+
+        const myStatus = await UserCompetition.findOne({
+            where: {
+                competitionId: competitionId,
+                userId: userId || 0,
+            }
+        })
+
+        return res.status(200).send({result: {...competition.dataValues, userCount: cntUser}, ranking: winners, myStatus: !!myStatus});
+    } catch (err) {
         return res.status(500).send({msg: err.toString()});
-    })
+    }
 };
 
 exports.getAllCompetitions = async (req, res) => {
@@ -81,7 +189,7 @@ exports.getAllCompetitions = async (req, res) => {
     }
 };
 
-exports.getNewCompetiton = (req, res) => {
+exports.getNewCompetition = (req, res) => {
     Competition.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
@@ -90,7 +198,10 @@ exports.getNewCompetiton = (req, res) => {
             startDate: {
                 [Op.gt]: (new Date()).getTime()
             }
-        }
+        },
+        include: [{
+            model: FishType
+        }]
     }).then(data => {
         return res.status(200).send({result: data});
     }).catch(err => {
@@ -104,7 +215,18 @@ exports.deleteCompetitionById = (req, res) => {
     Competition.destroy({
         where: {id: competitionId}
     }).then(cnt => {
-        return res.status(200).send({result: cnt});
+        if (cnt === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
+
+        UserCompetition.destroy({
+            where: {competitionId: competitionId}
+        }).then(data => {
+            return res.status(200).send({result: cnt});
+        }).catch(err => {
+            return res.status(200).send({msg: err.toString()});
+        })
+
     }).catch(err => {
         return res.status(200).send({msg: err.toString()});
     })
@@ -131,10 +253,73 @@ exports.getProgressingCompetitions = (req, res) => {
     })
 };
 
+exports.searchCompetitions = (req, res) => {
+    const searchKey = req.body.keyword;
+    const type = req.body.type;
+    const now = new Date();
+    let filter = {};
+
+    if (type === 1) {
+        filter = { // Progressing Contest
+            startDate: {
+                [Op.lte]: now.getTime()
+            },
+            endDate: {
+                [Op.gte]: now.getTime()
+            },
+            [Op.or]: [{
+                name: {
+                    [Op.like]: '%' + searchKey + '%'
+                }
+            }, {
+                description: {
+                    [Op.like]: '%' + searchKey + '%'
+                }
+            }]
+        };
+    } else if (type === 2) { // Rank Contest
+        filter = {
+            mode: 1,
+            [Op.or]: [{
+                name: {
+                    [Op.like]: '%' + searchKey + '%'
+                }
+            }, {
+                description: {
+                    [Op.like]: '%' + searchKey + '%'
+                }
+            }]
+        }
+    } else if (type === 3) {
+        filter = {
+            mode: {[Op.gt]: 1},
+            [Op.or]: [{
+                name: {
+                    [Op.like]: '%' + searchKey + '%'
+                }
+            }, {
+                description: {
+                    [Op.like]: '%' + searchKey + '%'
+                }
+            }]
+        }
+    }
+
+    Competition.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        where: filter,
+    }).then(data => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
+
 exports.getProgressingCompetitionsByUser = (req, res) => {
     const now = new Date();
 
-    Diary.findAll({
+    UserCompetition.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
         where: {userId: req.body.userId},
@@ -162,7 +347,7 @@ exports.getProgressingCompetitionsByUser = (req, res) => {
 exports.getAttendedCompetitionsByUser = (req, res) => {
     const now = new Date();
 
-    Diary.findAll({
+    UserCompetition.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
         where: {userId: req.body.userId},
@@ -189,7 +374,7 @@ exports.getRankCompetitions = (req, res) => {
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
         where: {
-            mode: 0
+            mode: 1
         }
     }).then(data => {
         return res.status(200).send({result: data});
@@ -204,7 +389,7 @@ exports.getQuestCompetitions = (req, res) => {
         offset: req.body.offset || 0,
         where: {
             mode: {
-                [Op.gt]: 0
+                [Op.gt]: 1
             }
         }
     }).then(data => {
@@ -221,23 +406,23 @@ exports.getCompetitionByMultiFilter = async (req, res) => {
     const filter = {};
     const now = new Date();
 
-    if (type !== 'ALL') filter.type = type;
-    if (mode === 0) filter.mode = 0;
-    if (mode === 1) filter.mode = {
-        [Op.gt]: 0
+    if (type) filter.type = type;
+    if (mode === 1) filter.mode = 1;
+    if (mode === 2) filter.mode = {
+        [Op.gt]: 1
     }
-    if (status === 0) {
+    if (status === 1) {
         filter.endDate = {
             [Op.lt]: now.getTime()
         };
-    } else if (status === 1) {
+    } else if (status === 2) {
         filter.startDate = {
             [Op.lt]: now.getTime()
         };
         filter.endDate = {
             [Op.gt]: now.getTime()
         };
-    } else if (status === 2) {
+    } else if (status === 3) {
         filter.startDate = {
             [Op.gt]: now.getTime()
         };
@@ -261,3 +446,108 @@ exports.getCompetitionByMultiFilter = async (req, res) => {
 }
 
 
+/**
+ * Get Ranking of the competition
+ * @param req keys: {competitionId, limit}
+ * @param res
+ * @returns {Promise<void>}
+ */
+exports.getCompetitionRanking = async (req, res) => {
+
+    try {
+        const competitionId = req.body.competitionId;
+        const limit = req.body.limit;
+
+        const competition = await Competition.findOne({
+            where: {id: competitionId}
+        });
+
+        const sortingKey = ['DESC', 'DESC', 'DESC', 'DESC', 'ASC'];
+
+        let data = [];
+
+        if (competition.mode > 0) {
+            data = await UserCompetition.findAll({
+                limit: limit || 1000000,
+                order: [[`record${competition.mode}`, sortingKey[competition.mode - 1]]],
+                attributes: ['id', `record${competition.mode}`],
+                where: {
+                    competitionId: competitionId,
+                },
+                include: [{
+                    model: User,
+                    attributes: ['id', 'name'],
+                    include: [{
+                        model: Profile,
+                        attributes: ['id', 'username', 'level', 'avatar'],
+                        include: [{
+                            model: UserStyle
+                        }]
+                    }]
+                }]
+            });
+        }
+        const myRanking = data.findIndex(x => x.user.id === req.body.userId);
+
+        return res.status(200).send({result: data, myRanking: myRanking + 1});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+};
+
+const getRecordByUser = async (userId) => {
+    let totalDiaryCount = 0;
+    let rankDiaryCount = 0;
+    let questDiaryCount = 0;
+    let rankChampionshipCount = 0;
+    let questChampionshipCount = 0;
+
+    const myCompetitions = await UserCompetition.findAll({
+        where: {userId: userId},
+        include: [{
+            model: Competition,
+        }]
+    });
+
+    totalDiaryCount = myCompetitions.length;
+
+    for (const item of myCompetitions) {
+        if (item.competition && item.competition.mode === 1) {
+            rankDiaryCount += 1;
+
+            const maxScore = await UserCompetition.max('record1', {
+                where: {competitionId: item.competition.id}
+            });
+
+            if (item.record1 === maxScore) rankChampionshipCount += 1;
+        } else if (item.competition) {
+            questDiaryCount += 1;
+
+            const comp = await Competition.findOne({
+                where: {id: item.competition.id}
+            });
+
+            if (item.competition.mode === 2) {
+                if (item.record2 >= comp.questFishWidth) questChampionshipCount += 1;
+            } else if (item.competition.mode === 3) {
+                if (item.record3 >= comp.questFishNumber) questChampionshipCount += 1;
+            } else if (item.competition.mode === 4) {
+                if (item.record4 >= comp.questFishNumber) questChampionshipCount += 1;
+            } else {
+                const minBias = await UserCompetition.min('record5', {
+                    where: {competitionId: item.competition.id}
+                });
+
+                if (item.record5 === minBias) questChampionshipCount += 1;
+            }
+        }
+    }
+
+    return {
+        totalDiaryCount,
+        rankDiaryCount,
+        questDiaryCount,
+        rankChampionshipCount,
+        questChampionshipCount,
+    };
+}

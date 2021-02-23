@@ -3,11 +3,8 @@ module.exports = (sequelize, Sequelize) => {
         userId: {
             type: Sequelize.INTEGER(21)
         },
-        image: {
-            type: Sequelize.STRING(100)
-        },
         content: {
-            type: Sequelize.STRING(3000)
+            type: Sequelize.TEXT
         },
         createdDate: {
             type: Sequelize.DATE,

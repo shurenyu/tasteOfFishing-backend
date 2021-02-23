@@ -2,6 +2,9 @@ const db = require("../models");
 const config = require("../config/auth.config");
 const User = db.user;
 const Profile = db.profile;
+const Competition = db.competition;
+const UserCompetition = db.userCompetition;
+const FishType = db.fishType;
 const EmailVerification = db.emailVerification;
 const EmailCertification = db.emailCertification;
 const PhoneCertification = db.phoneVerification;
@@ -138,6 +141,8 @@ exports.register = async (req, res) => {
  * @returns {token}
  */
 exports.appLogin = async (req, res) => {
+    Profile.hasOne(FishType, {sourceKey: 'mainFishType', foreignKey: 'id'});
+
     const {msg, isValid} = validateLoginInput(req.body);
 
     if (!isValid) {
@@ -153,9 +158,14 @@ exports.appLogin = async (req, res) => {
                 exclude: ['password'],
             },
             include: [{
-                model: Profile
+                model: Profile,
+                include: [{
+                    model: FishType
+                }]
             }]
         });
+
+        const userRecord = await getUserRecord(user.id);
 
         const generalInfo = await User.findOne({where: {email: req.body.email.toLowerCase()}});
 
@@ -163,7 +173,7 @@ exports.appLogin = async (req, res) => {
             bcrypt.compare(req.body.password, generalInfo.password).then(async isMatch => {
                 if (isMatch) {
                     const token = await generateToken(generalInfo);
-                    return res.status(200).json({accessToken: token, userInfo: user});
+                    return res.status(200).json({accessToken: token, userInfo: user, userRecord: userRecord});
                 } else {
                     return res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
                 }
@@ -172,9 +182,66 @@ exports.appLogin = async (req, res) => {
             return res.status(404).json({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
         }
     } catch (err) {
-        return res.status(500).json(err);
+        return res.status(500).json({msg: err.toString()})
     }
 };
+
+const getUserRecord = async (userId) => {
+    let totalDiaryCount = 0;
+    let rankDiaryCount = 0;
+    let questDiaryCount = 0;
+    let rankChampionshipCount = 0;
+    let questChampionshipCount = 0;
+
+    const myCompetitions = await UserCompetition.findAll({
+        where: {userId: userId},
+        include: [{
+            model: Competition,
+        }]
+    });
+
+    totalDiaryCount = myCompetitions.length;
+
+    for (const item of myCompetitions) {
+        if (item.competition && item.competition.mode === 1) {
+            rankDiaryCount += 1;
+
+            const maxScore = await UserCompetition.max('record1', {
+                where: {competitionId: item.competition.id}
+            });
+
+            if (item.record1 === maxScore) rankChampionshipCount += 1;
+        } else if (item.competition) {
+            questDiaryCount += 1;
+
+            const comp = await Competition.findOne({
+                where: {id: item.competition.id}
+            });
+
+            if (item.competition.mode === 2) {
+                if (item.record2 >= comp.questFishWidth) questChampionshipCount += 1;
+            } else if (item.competition.mode === 3) {
+                if (item.record3 >= comp.questFishNumber) questChampionshipCount += 1;
+            } else if (item.competition.mode === 4) {
+                if (item.record4 >= comp.questFishNumber) questChampionshipCount += 1;
+            } else {
+                const minBias = await UserCompetition.min('record5', {
+                    where: {competitionId: item.competition.id}
+                });
+
+                if (item.record5 === minBias) questChampionshipCount += 1;
+            }
+        }
+    }
+
+    return {
+        totalDiaryCount,
+        rankDiaryCount,
+        questDiaryCount,
+        rankChampionshipCount,
+        questChampionshipCount,
+    };
+}
 
 
 /**

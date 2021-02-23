@@ -3,13 +3,15 @@ const Terms = db.term;
 
 exports.registerTerms = (req, res) => {
     const newTerms = {
+        title: req.body.title,
         content: req.body.content,
         createdDate: new Date(),
     };
+    console.log(newTerms)
 
     Terms.create(newTerms)
         .then(data => {
-            return res.status(200).send({result: 'TERMS_REGISTER_SUCCESS'});
+            return res.status(200).send({result: 'TERMS_REGISTER_SUCCESS', data: data.id});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});
@@ -72,6 +74,9 @@ exports.deleteTerms = (req, res) => {
     Terms.destroy({
         where: {id: termsId}
     }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: 'TERMS_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});

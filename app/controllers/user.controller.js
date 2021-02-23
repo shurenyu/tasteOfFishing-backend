@@ -1,9 +1,9 @@
-
-
 const db = require("../models");
 const User = db.user;
 const Profile = db.profile;
-const Diary = db.diary;
+// const Diary = db.diary;
+const UserStyle = db.userStyle;
+const UserCompetition = db.userCompetition;
 const Competition = db.competition;
 const Op = db.Sequelize.Op;
 
@@ -19,7 +19,7 @@ exports.registerProfile = (req, res) => {
     };
     Profile.create(newProfile)
         .then(data => {
-            return res.status(200).send({result: 'USER.PROFILE_REGISTER_SUCCESS'});
+            return res.status(200).send({result: 'USER.PROFILE_REGISTER_SUCCESS', data: data.id});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});
@@ -76,7 +76,10 @@ exports.getProfileByUserId = (req, res) => {
     const userId = req.body.userId;
 
     Profile.findOne({
-        where: {userId: userId}
+        where: {userId: userId},
+        include: [{
+            model: UserStyle
+        }]
     }).then(data => {
         return res.status(200).send({result: data});
     }).catch(err => {
@@ -103,32 +106,28 @@ exports.getAllUsers = async (req, res) => {
     }
 }
 
-exports.getUserById = (req, res) => {
+exports.getUserById = async (req, res) => {
     const userId = req.body.userId;
 
-    User.findOne({
-        where: {id: userId}
-    }).then(data => {
-        return res.status(200).send({result: data});
-    }).catch(err => {
-        return res.status(500).send({msg: err.toString()});
-    })
-}
+    try {
+        const user = await User.findOne({
+            where: {id: userId},
+            attributes: ['id', 'email', 'name'],
+            include: [{
+                model: Profile,
+                attributes: ['id', 'username', 'level', 'introMe', 'avatar'],
+                include: [{
+                    model: UserStyle
+                }]
+            }]
+        });
 
-exports.getFullUserInfo = (req, res) => {
-    const userId = req.body.userId;
+        const userRecord = await getRecordByUser(userId);
 
-    User.findOne({
-        where: {id: userId},
-        attributes: {exclude: ['password']},
-        include: [{
-            model: Profile,
-        }]
-    }).then(data => {
-        return res.status(200).send({result: data});
-    }).catch(err => {
+        return res.status(200).send({userInfo: user, userRecord: userRecord});
+    } catch (err) {
         return res.status(500).send({msg: err.toString()});
-    })
+    }
 }
 
 exports.deleteUserById = (req, res) => {
@@ -137,82 +136,172 @@ exports.deleteUserById = (req, res) => {
     User.destroy({
         where: {id: userId}
     }).then(cnt => {
+        if (cnt === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: cnt});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
 }
 
-exports.getRecordByUser = async (req, res) => {
+exports.getMyInfo = async (req, res) => {
     const userId = req.body.userId;
+
+    try {
+        const myInfo = await User.findOne({
+            where: {
+                id: userId
+            },
+            attributes: ['id', 'name', 'email'],
+            include: [{
+                model: Profile,
+            }]
+        });
+
+        const userRecord = await getRecordByUser(userId);
+
+        return res.status(200).send({userInfo: myInfo, userRecord: userRecord});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
+
+exports.attendCompetition = async (req, res) => {
+    try {
+        const userId = req.body.userId;
+        const competitionId = req.body.competitionId;
+
+        const userCompetition = await UserCompetition.findOne({
+            where: {
+                userId: userId,
+                competitionId: competitionId
+            }
+        });
+
+        if (userCompetition) {
+            return res.status(400).send({msg: 'ALREADY_ATTENDED'});
+        }
+
+        const profile = await Profile.findOne({
+            where: {
+                userId: req.body.userId,
+            }
+        });
+
+        if (profile.pointAmount < req.body.attendPoint) {
+            return res.status(400).send({result: 'POINT_NOT_ENOUGH'});
+        }
+
+        await UserCompetition.create({
+            userId: req.body.userId,
+            competitionId: req.body.competitionId,
+            createdDate: new Date()
+        });
+
+        // update the pointAmount, level, exp, and style
+        profile.pointAmount -= req.body.attendPoint;
+        profile.exp += 150;
+        profile.level = Math.floor(profile.exp / 1000);
+        if (profile.userStyleId > 5) {
+            const userRecord = getRecordByUser(userId);
+            if (userRecord.totalDiaryCount <= 1) {
+                profile.userStyleId = 1;
+            } else if (userRecord.totalDiaryCount <= 10) {
+                profile.userStyleId = 2;
+            } else if (userRecord.totalDiaryCount <= 20) {
+                profile.userStyleId = 3;
+            } else if (userRecord.totalDiaryCount <= 50) {
+                profile.userStyleId = 4;
+            } else if (userRecord.totalDiaryCount <= 100) {
+                profile.userStyleId = 5;
+            }
+        }
+        await profile.save();
+
+        const userRecord = await getRecordByUser(req.body.userId);
+
+
+        return res.status(200).send({result: 'SUCCESS_COMPETITION_ATTEND', userInfo: profile});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
+
+const getRecordByUser = async (userId) => {
     let totalDiaryCount = 0;
     let rankDiaryCount = 0;
     let questDiaryCount = 0;
     let rankChampionshipCount = 0;
     let questChampionshipCount = 0;
 
-    const myDiaries = await Diary.findAll({
+    const myCompetitions = await UserCompetition.findAll({
         where: {userId: userId},
         include: [{
             model: Competition,
         }]
     });
 
-    totalDiaryCount = myDiaries.length;
+    totalDiaryCount = myCompetitions.length;
 
-    for (const item of myDiaries) {
-        if (item.competition.mode === 0) {
+    for (const item of myCompetitions) {
+        if (item.competition && item.competition.mode === 1) {
             rankDiaryCount += 1;
 
-            const maxScore = await Diary.max('record0', {
+            const maxScore = await UserCompetition.max('record1', {
                 where: {competitionId: item.competition.id}
             });
 
-            if (item.record0 === maxScore) rankChampionshipCount += 1;
-        } else {
+            if (item.record1 === maxScore) rankChampionshipCount += 1;
+        } else if (item.competition) {
             questDiaryCount += 1;
 
             const comp = await Competition.findOne({
                 where: {id: item.competition.id}
             });
 
-            if (item.competition.mode === 1) {
-                if (item.record1 >= comp.questFishWidth) questChampionshipCount += 1;
-            } else if (item.competition.mode === 2) {
-                if (item.record2 >= comp.questFishNumber) questChampionshipCount += 1;
+            if (item.competition.mode === 2) {
+                if (item.record2 >= comp.questFishWidth) questChampionshipCount += 1;
             } else if (item.competition.mode === 3) {
                 if (item.record3 >= comp.questFishNumber) questChampionshipCount += 1;
+            } else if (item.competition.mode === 4) {
+                if (item.record4 >= comp.questFishNumber) questChampionshipCount += 1;
             } else {
-                const minBias = await Diary.min('record4', {
+                const minBias = await UserCompetition.min('record5', {
                     where: {competitionId: item.competition.id}
                 });
 
-                if (item.record4 === minBias) questChampionshipCount += 1;
+                if (item.record5 === minBias) questChampionshipCount += 1;
             }
         }
     }
 
-    const data = {
+    return {
         totalDiaryCount,
         rankDiaryCount,
         questDiaryCount,
         rankChampionshipCount,
         questChampionshipCount,
-    }
-
-    return res.status(200).send({result: data});
+    };
 }
+
 
 const Test = db.test
 exports.testing = async (req, res) => {
     console.log("***********************")
-    const data = await Test.findAll({
-        // order: [['point', 'DESC']],
-        attributes: ['id', 'point',
-            [db.Sequelize.literal('(RANK() OVER (ORDER BY point DESC))'), 'rank']
-        ]
-    });
+    try {
+        const data = await Test.findAll({
+            // order: [['point', 'DESC']],
+            attributes: [
+                'id', 'point',
+                [db.Sequelize.literal('(RANK() OVER (ORDER BY point DESC))'), 'rank']
+            ]
+        });
 
-    return res.status(200).send({result: data});
+        return res.status(200).send({result: data});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+
 }
 

@@ -7,10 +7,13 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER(21)
         },
         content: {
-            type: Sequelize.STRING(1200)
+            type: Sequelize.TEXT
         },
         status: {
             type: Sequelize.STRING(2)
+        },
+        type: {
+            type: Sequelize.INTEGER(4)
         },
         createdDate: {
             type: Sequelize.DATE,

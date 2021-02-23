@@ -1,17 +1,22 @@
+// const Sequelize = require("sequelize");
+
 const db = require("../models");
 const Fish = db.fish;
-const Diary = db.diary;
 const Competition = db.competition;
+const UserCompetition = db.userCompetition;
 const FishImage = db.fishImage;
 const User = db.user;
+const UserRecord = db.userRecord;
 const Profile = db.profile;
+const UserStyle = db.userStyle;
 const FishType = db.fishType;
+const DiaryComment = db.diaryComment;
 const Op = db.Sequelize.Op;
 
 exports.commitFish = async (req, res) => {
     const newFish = {
-        userId: req.body.userId,
-        competitionId: req.body.competitionId,
+        ...req.body,
+        status: 3, // pending status
         registerDate: new Date(),
     };
 
@@ -29,23 +34,31 @@ exports.commitFish = async (req, res) => {
     if (competition) {
         Fish.create(newFish)
             .then(data => {
-                return res.status(200).send({result: data});
+                return res.status(200).send({result: 'DIARY_FISH_COMMIT_SUCCESS', data: {id: data.id, registerDate: data.registerDate}});
             })
             .catch(err => {
                 return res.status(500).send({msg: err.toString()});
             })
     } else {
-        return res.status(500).send({msg: 'COMPETITION_DURATION_ERROR'});
+        return res.status(404).send({msg: 'COMPETITION_DURATION_ERROR'});
     }
 };
 
 exports.addFishImage = (req, res) => {
-    const data = {
-        fishId: req.body.fishId,
-        image: req.body.image,
-    }
+    // const data = {
+    //     fishId: req.body.fishId,
+    //     image: req.body.image,
+    // }
 
-    FishImage.create(data)
+    const images = req.body.images;
+    const fishId = req.body.fishId;
+
+    const data = images.map(x => ({
+        fishId: fishId,
+        image: x,
+    }));
+
+    FishImage.bulkCreate(data, {returning: true})
         .then(data => {
             return res.status(200).send({result: 'DIARY_FISH_IMAGE_ADD_SUCCESS'});
         })
@@ -77,7 +90,7 @@ exports.registerCheckedFish = async (req, res) => {
 
         await fish.save();
 
-        /* update the record of diary */
+        /* update the record of userCompetition */
 
         const competition = await Competition.findOne({
             where: {
@@ -85,51 +98,77 @@ exports.registerCheckedFish = async (req, res) => {
             }
         });
 
-        const currentDiary = {
+        const filter = {
             userId: fish.userId,
             competitionId: fish.competitionId,
         }
 
-        const diary = await Diary.findOne({
-            where: currentDiary
+        const userCompetition = await UserCompetition.findOne({
+            where: filter
         });
 
-        if (diary !== null) {
-            if (competition.mode === 0) {
+        if (userCompetition !== null) {
+            if (competition.mode === 1) {
 
-                diary.record0 = await Fish.sum('fishWidth', {
+                userCompetition.record1 = await Fish.sum('fishWidth', {
                     limit: competition.rankFishNumber,
                     order: [['fishWidth', 'DESC']],
-                    where: currentDiary
+                    where: filter
                 });
-                await diary.save();
-
-            } else if (competition.mode === 1) {
-
-                diary.record1 = await Fish.max('fishWidth', {
-                    where: currentDiary
-                });
-                await diary.save();
+                await userCompetition.save();
 
             } else if (competition.mode === 2) {
 
-                diary.record2 = diary.record2 + 1;
-                await diary.save();
+                userCompetition.record2 = await Fish.max('fishWidth', {
+                    where: filter
+                });
+                await userCompetition.save();
 
             } else if (competition.mode === 3) {
 
-                if (fish.fishWidth >= competition.questFishWidth) {
-                    diary.record3 = diary.record3 + 1;
-                    await diary.save();
-                }
+                userCompetition.record3 = userCompetition.record3 + 1;
+                await userCompetition.save();
 
             } else if (competition.mode === 4) {
 
-                if (Math.abs(diary.record4) > Math.abs(fish.fishWidth - competition.questSpecialWidth)) {
-                    diary.record4 = fish.fishWidth - competition.questSpecialWidth;
-                    await diary.save();
+                if (fish.fishWidth >= competition.questFishWidth) {
+                    userCompetition.record4 = userCompetition.record4 + 1;
+                    await userCompetition.save();
+                }
+
+            } else if (competition.mode === 5) {
+
+                if (Math.abs(userCompetition.record5) > Math.abs(fish.fishWidth - competition.questSpecialWidth)) {
+                    userCompetition.record5 = fish.fishWidth - competition.questSpecialWidth;
+                    await userCompetition.save();
                 }
             }
+        }
+
+        /* update the record of UserRecord */
+
+        const record = UserRecord.findOne({
+            where: {
+                userId: fish.userId,
+                fishId: fish.id,
+            }
+        });
+
+        const recordImage = await FishImage.findOne({
+            where: {fishId: fish.id}
+        });
+
+        if (!record) {
+            await UserRecord.create({
+                userId: fish.userId,
+                fishId: fish.id,
+                record: fish.fishWidth,
+                fishImage: recordImage.image,
+            });
+        } else if (record && record.record < fish.fishWidth) {
+            record.record = fish.fishWidth;
+            record.fishImage = recordImage.image;
+            await record.save();
         }
 
         return res.status(200).send({result: 'FISH_REGISTER_SUCCESS'});
@@ -139,20 +178,107 @@ exports.registerCheckedFish = async (req, res) => {
 };
 
 exports.getFishesByUser = (req, res) => {
-    const userId = req.body.userId;
+    let filter = {
+        userId: req.body.userId,
+        competitionId: req.body.competitionId,
+    };
+
+    if (req.body.accepted === 1) {
+        filter = {...filter, status: 1};
+    }
+
     Fish.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
-        where: {
-            userId: userId,
-            status: 1
-        }
+        where: filter,
+        include: [{
+            model: FishType,
+            attributes: ['id', 'name']
+        }, {
+            model: FishImage,
+            attributes: ['id', 'image']
+        }, {
+            model: User,
+            attributes: ['id', 'name']
+        }, {
+            model: Competition,
+            attributes: ['id', 'name']
+        }]
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
 };
+
+exports.getDiariesByUser = (req, res) => {
+    const userId = req.body.userId;
+
+    Fish.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['registerDate', 'DESC']],
+        where: {
+            userId: userId,
+            status: 1
+        },
+        include: [{
+            model: FishType,
+            attributes: ['id', 'name']
+        }, {
+            model: FishImage,
+            attributes: ['id', 'image']
+        }, {
+            model: User,
+            attributes: ['id', 'name']
+        }, {
+            model: Competition,
+            attributes: ['id', 'name']
+        }]
+    }).then((data) => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+};
+
+
+exports.searchDiary = (req, res) => {
+    const userId = req.body.userId;
+    let filter = {};
+    if (req.body.keyword) {
+        filter = {
+            name: {
+                [Op.like]: '%' + req.body.keyword + '%'
+            }
+        };
+    }
+
+    Fish.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        where: {
+            userId: userId,
+            status: 1
+        },
+        include: [{
+            model: FishType,
+            attributes: ['id', 'name']
+        }, {
+            model: FishImage,
+            attributes: ['id', 'image']
+        }, {
+            model: Competition,
+            attributes: ['id', 'name'],
+            where: filter,
+        }]
+    }).then((data) => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+};
+
 
 exports.getFishesByCompetition = (req, res) => {
     const competitionId = req.body.competitionId;
@@ -163,7 +289,14 @@ exports.getFishesByCompetition = (req, res) => {
         where: {
             competitionId: competitionId,
             status: 1
-        }
+        },
+        include: [{
+            model: FishType,
+            attributes: ['id', 'name']
+        }, {
+            model: FishImage,
+            attributes: ['id', 'image']
+        }]
     }).then((data) => {
         return res.status(200).send({result: data});
     }).catch(err => {
@@ -183,7 +316,21 @@ exports.getFishById = (req, res) => {
             model: Competition,
             attributes: ['id', 'name']
         }, {
-            model: FishImage
+            model: FishImage,
+            attributes: ['id', 'image']
+        }, {
+            model: DiaryComment,
+            include: [{
+                model: User,
+                attributes: ['id', 'name'],
+                include: [{
+                    model: Profile,
+                    attributes: ['id', 'avatar', 'level', 'username'],
+                    include: [{
+                        model: UserStyle
+                    }]
+                }]
+            }]
         }]
     }).then((data) => {
         return res.status(200).send({result: data});
@@ -228,8 +375,8 @@ exports.getFishesByMultiFilter = async (req, res) => {
 
         let filter = {};
 
-        if (competitionId !== 0) filter.competitionId = competitionId;
-        if (status !== 3) filter.status = status;
+        if (competitionId) filter.competitionId = competitionId;
+        if (status) filter.status = status;
 
         const totalCount = await Fish.count({
             where: filter
@@ -287,4 +434,128 @@ exports.updateFish = async (req, res) => {
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }
+}
+
+exports.getRankingRealtime = async (req, res) => {
+    let filter = {};
+    if (req.body.fishTypeId !== 0) filter.fishTypeId = req.body.fishTypeId;
+    const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY record DESC))');
+
+    try {
+        const userRankings = await UserRecord.findAll({
+            limit: req.body.limit || 1000000,
+            offset: req.body.offset || 0,
+            where: filter,
+            // attributes: ['id', 'record', [rank, 'rank']],
+            attributes: ['id', 'userId', 'record'],
+            order: [['record', 'DESC']],
+            include: [{
+                model: Fish,
+                attributes: ['id'],
+                include: [{
+                    model: User,
+                    attributes: ['id', 'name'],
+                }, {
+                    model: FishType,
+                    attributes: ['id', 'name'],
+                }, {
+                    model: FishImage,
+                    limit: 1,
+                    attributes: ['id', 'image'],
+                }]
+            }],
+        });
+
+        const idx = userRankings.findIndex(x=> x.userId === req.body.userId);
+        const myFish = idx > -1 ? userRankings[idx] : null;
+        return res.status(200).send({result: userRankings, myRanking: idx + 1, myFish: myFish});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
+
+// exports.getRankingRealtime = async (req, res) => {
+//     let filter = {};
+//     if (req.body.fishTypeId !== 0) filter.fishTypeId = req.body.fishTypeId;
+//     const max = db.Sequelize.fn('max', db.Sequelize.col('fishWidth'));
+//     // const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY max DESC))');
+//
+//     try {
+//         const fishes = await Fish.findAll({
+//             limit: req.body.limit || 1000000,
+//             offset: req.body.offset || 0,
+//             where: filter,
+//             order: [[max, 'DESC']],
+//             attributes: [[max, 'max']],
+//             group: ['userId'],
+//             include: [{
+//                 model: User,
+//                 attributes: ['id', 'name'],
+//             }],
+//         });
+//         const temp = [];
+//         let myFish = {};
+//         let myRanking = 0;
+//         for (const [idx, item] of fishes.entries()) {
+//             const image = await Fish.findOne({
+//                 where: {fishWidth: item.dataValues.max},
+//                 attributes: ['id'],
+//                 include: [{
+//                     limit: 1,
+//                     model: FishImage,
+//                     attributes: ['image']
+//                 }, {
+//                     model: FishType,
+//                     attributes: ['name']
+//                 }]
+//             });
+//             const newItem = {
+//                 ...item.dataValues,
+//                 image: image.dataValues.fishImages[0].dataValues.image,
+//                 type: image.dataValues.fishType.dataValues.name
+//             }
+//             temp.push(newItem);
+//
+//             if (item.user.id === req.body.userId) {
+//                 myRanking = idx + 1;
+//                 myFish = newItem;
+//             }
+//         }
+//
+//         return res.status(200).send({result: temp, myFish: myFish, myRanking: myRanking});
+//         // return res.status(200).send({result: fishes, myFish: myFish, myRanking: myRanking});
+//     } catch (err) {
+//         return res.status(500).send({msg: err.toString()});
+//     }
+// }
+
+exports.addFishComment = (req, res) => {
+    const newComment = {
+        fishId: req.body.fishId,
+        userId: req.body.userId,
+        comment: req.body.comment,
+        createdDate: new Date(),
+    }
+
+    DiaryComment.create(newComment)
+        .then(data => {
+            return res.status(200).send({result: 'DIARY_COMMENT_REGISTER_SUCCESS', data: data});
+        })
+        .catch(err => {
+            return res.status(500).send({msg: err.toString()});
+        })
+};
+
+exports.deleteFishComment = (req, res) => {
+    const fishCommentId = req.body.fishCommentId;
+    DiaryComment.destroy({
+        where: {id: fishCommentId}
+    }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
+        return res.status(200).send({result: 'DIARY_COMMENT_DELETE_SUCCESS'});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
 }

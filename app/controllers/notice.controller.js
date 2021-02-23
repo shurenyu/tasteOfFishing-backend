@@ -4,13 +4,15 @@ const NoticeType = db.noticeType;
 
 exports.registerNotice = (req, res) => {
     const newNotice = {
+        noticeTypeId: req.body.noticeTypeId,
+        title: req.body.title,
         content: req.body.content,
         createdDate: new Date(),
     };
 
     Notice.create(newNotice)
-        .then(data => {
-            return res.status(200).send({result: 'NOTICE_REGISTER_SUCCESS'});
+        .then(async data => {
+            return res.status(200).send({result: 'NOTICE_REGISTER_SUCCESS', data: data});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});
@@ -22,6 +24,9 @@ exports.getAllNotice = (req, res) => {
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
         order: [['createdDate', 'DESC']],
+        include: [{
+            model: NoticeType
+        }]
     })
         .then(async data => {
             const count = await Notice.count();
@@ -86,6 +91,9 @@ exports.deleteNotice = (req, res) => {
     Notice.destroy({
         where: {id: noticeId}
     }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: 'NOTICE_DELETE_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
@@ -119,6 +127,9 @@ exports.deleteNoticeType = (req, res) => {
             id: req.body.noticeTypeId
         }
     }).then(cnt => {
+        if (cnt === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
         return res.status(200).send({result: cnt});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
