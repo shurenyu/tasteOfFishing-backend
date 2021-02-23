@@ -108,7 +108,7 @@ exports.adminRegister = async (req, res) => {
             name: req.body.name,
             email: req.body.email.toLowerCase(),
             type: req.body.type, // 0- 관리자, 1-일반유저, 2-구글로그인유저, 3-페이스북로그인유저
-            adminActive: false,
+            active: false,
             createdDate: new Date(),
         };
 
@@ -422,7 +422,7 @@ exports.verifyCodeAndSignUp = async (req, res) => {
                     id: req.body.userId,
                 }
             });
-            user.adminActive = true;
+            user.active = true;
             await user.save();
 
             const token = await generateToken(user);

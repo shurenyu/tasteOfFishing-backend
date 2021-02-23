@@ -12,7 +12,7 @@ module.exports = (sequelize, Sequelize) => {
         password: {
             type: Sequelize.STRING(256)
         },
-        adminActive: {
+        active: {
             type: Sequelize.BOOLEAN,
             defaultValue: false,
         },
