@@ -74,7 +74,7 @@ const sendCode = async (user, res) => {
         user.email,
         user.name,
         user.id,
-        'You requested to reset your password.',
+        'Sent the code for email verification',
         makeMailFromTemplate({
             header: `안녕하세요, ${user.name}님`,
             title: '인증코드전송',
@@ -86,9 +86,56 @@ const sendCode = async (user, res) => {
 
 }
 
-
 /**
  * AdminUser Register
+ * @param req keys: {name, email, password, confirmPassword, type}
+ * @param res
+ * @returns {token}
+ */
+exports.adminRegister = async (req, res) => {
+    const {msg, isValid} = validateRegisterInput(req.body);
+    if (!isValid) {
+        return res.status(400).json({msg: msg});
+    }
+
+    try {
+        const user = await User.findOne({where: {email: req.body.email.toLowerCase()}});
+        if (user) {
+            return res.status(400).json({msg: "AUTH.VALIDATION.EMAIL_DUPLICATED"});
+        }
+
+        const newUser = {
+            name: req.body.name,
+            email: req.body.email.toLowerCase(),
+            type: req.body.type, // 0- 관리자, 1-일반유저, 2-구글로그인유저, 3-페이스북로그인유저
+            adminActive: false,
+            createdDate: new Date(),
+        };
+
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(req.body.password, salt, (err, hash) => {
+                if (err) throw err;
+                newUser.password = hash;
+                User.create(newUser)
+                    .then(async user => {
+                        await sendCode(user, res);
+                        // const device = req.body.device || '';
+                        // const token = await generateToken(user);
+                        // return res.status(200).json({accessToken: token, userInfo: user});
+                    })
+                    .catch(err => {
+                        return res.status(500).json({msg: err.toString()});
+                    });
+            });
+        });
+    } catch (err) {
+        return res.status(500).json({msg: err.toString()});
+    }
+};
+
+
+/**
+ * App User Register
  * @param req keys: {name, email, password, confirmPassword, type}
  * @param res
  * @returns {token}
@@ -245,7 +292,7 @@ const getUserRecord = async (userId) => {
 
 
 /**
- * AdminUser Login
+ * social Login
  * @param req keys: {name, email, type}
  * @param res
  * @returns {token}
@@ -375,7 +422,7 @@ exports.verifyCodeAndSignUp = async (req, res) => {
                     id: req.body.userId,
                 }
             });
-
+            user.adminActive = true;
             await user.save();
 
             const token = await generateToken(user);

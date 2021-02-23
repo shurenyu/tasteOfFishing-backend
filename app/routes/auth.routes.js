@@ -10,6 +10,11 @@ module.exports = function (app) {
     });
 
     app.all(
+        "/auth/admin-register",
+        controller.adminRegister
+    );
+
+    app.all(
         "/auth/register",
         controller.register
     );
