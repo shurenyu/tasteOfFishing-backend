@@ -290,15 +290,31 @@ const Test = db.test
 exports.testing = async (req, res) => {
     console.log("***********************")
     try {
-        const data = await Test.findAll({
-            // order: [['point', 'DESC']],
-            attributes: [
-                'id', 'point',
-                [db.Sequelize.literal('(RANK() OVER (ORDER BY point DESC))'), 'rank']
-            ]
-        });
+        // const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY point DESC))');
+        // const data = await Test.findAll({
+        //     // order: [['point', 'DESC']],
+        //     attributes: [
+        //         'id', 'point',
+        //         [rank, 'rank']
+        //     ]
+        // });
 
-        return res.status(200).send({result: data});
+
+        const [winners, metadata] = await db.sequelize.query(`
+                    SELECT *,
+                    (
+                        SELECT 1+ count(*)
+                        FROM userCompetitions uc1
+                        WHERE uc1.record1 > uc.record1
+                    ) as rank
+                    FROM userCompetitions uc
+                    HAVING competitionId = 15 and rank < 4
+                    ORDER BY uc.record1 DESC
+                `);
+
+
+
+        return res.status(200).send({result: winners});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }
