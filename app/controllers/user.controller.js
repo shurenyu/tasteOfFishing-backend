@@ -171,6 +171,7 @@ exports.attendCompetition = async (req, res) => {
     try {
         const userId = req.body.userId;
         const competitionId = req.body.competitionId;
+        const attendPoint = req.body.attendPoint;
 
         const userCompetition = await UserCompetition.findOne({
             where: {
@@ -189,40 +190,90 @@ exports.attendCompetition = async (req, res) => {
             }
         });
 
-        if (profile.pointAmount < req.body.attendPoint) {
+        if (profile.pointAmount < attendPoint) {
             return res.status(400).send({result: 'POINT_NOT_ENOUGH'});
         }
 
         await UserCompetition.create({
-            userId: req.body.userId,
-            competitionId: req.body.competitionId,
+            userId: userId,
+            competitionId: competitionId,
             createdDate: new Date()
         });
 
         // update the pointAmount, level, exp, and style
-        profile.pointAmount -= req.body.attendPoint;
+        profile.pointAmount -= attendPoint;
         profile.exp += 150;
         profile.level = Math.floor(profile.exp / 1000);
-        if (profile.userStyleId > 5) {
-            const userRecord = getRecordByUser(userId);
-            if (userRecord.totalDiaryCount <= 1) {
+        const attendCount = await UserCompetition.count({
+            where: {userId: userId},
+        });
+
+        if (profile.userStyleId <= 5) {
+            if (attendCount <= 1) {
                 profile.userStyleId = 1;
-            } else if (userRecord.totalDiaryCount <= 10) {
+            } else if (attendCount <= 10) {
                 profile.userStyleId = 2;
-            } else if (userRecord.totalDiaryCount <= 20) {
+            } else if (attendCount <= 20) {
                 profile.userStyleId = 3;
-            } else if (userRecord.totalDiaryCount <= 50) {
+            } else if (attendCount <= 50) {
                 profile.userStyleId = 4;
-            } else if (userRecord.totalDiaryCount <= 100) {
+            } else if (attendCount <= 100) {
                 profile.userStyleId = 5;
             }
         }
         await profile.save();
 
-        const userRecord = await getRecordByUser(req.body.userId);
-
-
         return res.status(200).send({result: 'SUCCESS_COMPETITION_ATTEND', userInfo: profile});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
+
+exports.cancelCompetition = async (req, res) => {
+    const userId = req.body.userId;
+    const competitionId = req.body.competitionId;
+
+    try {
+        const cnt = await UserCompetition.destroy({
+            where: {
+                userId: userId,
+                competitionId: competitionId
+            }
+        });
+
+        if (cnt === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
+
+        const profile = await Profile.findOne({
+            where: {
+                userId: userId,
+            }
+        });
+
+        // update the pointAmount, level, exp, and style
+        profile.exp -= 150;
+        profile.level = Math.floor(profile.exp / 1000);
+        const attendCount = await UserCompetition.count({
+            where: {userId: userId},
+        });
+
+        if (profile.userStyleId <= 5) {
+            if (attendCount <= 1) {
+                profile.userStyleId = 1;
+            } else if (attendCount <= 10) {
+                profile.userStyleId = 2;
+            } else if (attendCount <= 20) {
+                profile.userStyleId = 3;
+            } else if (attendCount <= 50) {
+                profile.userStyleId = 4;
+            } else if (attendCount <= 100) {
+                profile.userStyleId = 5;
+            }
+        }
+        await profile.save();
+
+        return res.status(200).send({result: 'SUCCESS_COMPETITION_CANCEL', userInfo: profile});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }

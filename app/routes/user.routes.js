@@ -64,6 +64,12 @@ module.exports = function (app) {
         controller.attendCompetition
     );
 
+    app.all(
+        "/user/competition-cancel",
+        [authJwt.verifyToken],
+        controller.cancelCompetition
+    );
+
     // app.all(
     //     "/user/record/get",
     //     [authJwt.verifyToken],
