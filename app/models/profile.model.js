@@ -40,7 +40,7 @@ module.exports = (sequelize, Sequelize) => {
         },
         userStyleId: {
             type: Sequelize.INTEGER(11),
-            defaultValue: '',
+            defaultValue: 0,
         },
         mainFishType: {
             type: Sequelize.INTEGER(11),
