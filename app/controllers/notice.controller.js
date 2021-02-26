@@ -1,6 +1,7 @@
 const db = require("../models");
 const Notice = db.notice;
 const NoticeType = db.noticeType;
+const UserNotice = db.userNotice;
 
 exports.registerNotice = (req, res) => {
     const newNotice = {
@@ -19,21 +20,35 @@ exports.registerNotice = (req, res) => {
         })
 };
 
-exports.getAllNotice = (req, res) => {
-    Notice.findAll({
-        limit: req.body.limit || 1000000,
-        offset: req.body.offset || 0,
-        order: [['createdDate', 'DESC']],
-        include: [{
-            model: NoticeType
-        }]
-    })
-        .then(async data => {
-            const count = await Notice.count();
-            return res.status(200).send({result: data, totalCount: count});
-        }).catch(err => {
+exports.getAllNotice = async (req, res) => {
+    try {
+        const notices = await Notice.findAll({
+            limit: req.body.limit || 1000000,
+            offset: req.body.offset || 0,
+            order: [['createdDate', 'DESC']],
+            include: [{
+                model: NoticeType
+            }]
+        });
+        const temp = [];
+        for (const notice of notices) {
+            const flag = await UserNotice.findOne({
+                where: {
+                    userId: req.body.userId,
+                    noticeId: notice.id
+                }
+            });
+
+            temp.push({
+                ...notice.dataValues,
+                status: !flag
+            });
+        }
+        const count = await Notice.count();
+        return res.status(200).send({result: temp, totalCount: count});
+    } catch (err) {
         return res.status(500).send({msg: err.toString()});
-    })
+    }
 };
 
 exports.getRecentNotice = (req, res) => {
@@ -136,3 +151,17 @@ exports.deleteNoticeType = (req, res) => {
     })
 }
 
+exports.readNotice = (req, res) => {
+    const userId = req.body.userId;
+    const noticeId = req.body.noticeId;
+
+    UserNotice.create({
+        userId,
+        noticeId,
+        createdDate: new Date()
+    }).then(data => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}

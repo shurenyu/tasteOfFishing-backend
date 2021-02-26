@@ -52,6 +52,7 @@ db.report = require("./report.model")(sequelize, Sequelize);
 db.term = require("./terms.model")(sequelize, Sequelize);
 db.user = require("./user.model")(sequelize, Sequelize);
 db.userCompetition = require("./userCompetition.model")(sequelize, Sequelize);
+db.userNotice = require("./userNotice.model")(sequelize, Sequelize);
 db.userRecord = require("./userRecord.model")(sequelize, Sequelize);
 db.userStyle = require("./userStyle.model")(sequelize, Sequelize);
 db.withdrawal = require("./withdrawal.model")(sequelize, Sequelize);

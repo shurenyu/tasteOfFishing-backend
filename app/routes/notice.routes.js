@@ -64,4 +64,11 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.deleteNoticeType
     );
+
+    app.all(
+        "/notice/read",
+        [authJwt.verifyToken],
+        controller.readNotice
+    );
+
 };
