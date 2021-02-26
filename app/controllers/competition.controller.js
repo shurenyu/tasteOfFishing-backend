@@ -284,7 +284,7 @@ exports.getNewCompetition = (req, res) => {
         offset: req.body.offset || 0,
         order: [['startDate', 'ASC']],
         where: {
-            startDate: {
+            endDate: {
                 [Op.gt]: (new Date()).getTime()
             }
         },

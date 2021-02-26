@@ -22,7 +22,6 @@ exports.registerProfile = (req, res) => {
             return res.status(200).send({result: 'USER.PROFILE_REGISTER_SUCCESS', data: data.id});
         })
         .catch(err => {
-            console.log(err.toString())
             return res.status(500).send({msg: err.toString()});
         });
 };
