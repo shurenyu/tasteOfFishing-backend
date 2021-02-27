@@ -160,7 +160,7 @@ exports.readNotice = (req, res) => {
         noticeId,
         createdDate: new Date()
     }).then(data => {
-        return res.status(200).send({result: data});
+        return res.status(200).send({result: 'NOTICE_READ_SUCCESS'});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
