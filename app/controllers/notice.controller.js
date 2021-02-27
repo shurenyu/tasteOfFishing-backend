@@ -30,6 +30,13 @@ exports.getAllNotice = async (req, res) => {
                 model: NoticeType
             }]
         });
+
+        const count = await Notice.count();
+
+        if (!req.body.userId) {
+            return res.status(200).send({result: notices, totalCount: count});
+        }
+
         const temp = [];
         for (const notice of notices) {
             const flag = await UserNotice.findOne({
@@ -44,7 +51,6 @@ exports.getAllNotice = async (req, res) => {
                 status: !flag
             });
         }
-        const count = await Notice.count();
         return res.status(200).send({result: temp, totalCount: count});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
