@@ -213,11 +213,12 @@ exports.getFishesByUser = (req, res) => {
 
 exports.getDiariesByUser = (req, res) => {
     const userId = req.body.userId;
+    const sortKey = req.body.sortKey; // 0-by date, 1-by width
 
     Fish.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
-        order: [['registerDate', 'DESC']],
+        order: [[sortKey === 1 ? 'fishWidth' : 'registerDate', 'DESC']],
         where: {
             userId: userId,
             status: 1
