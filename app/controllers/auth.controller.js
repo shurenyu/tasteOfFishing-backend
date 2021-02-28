@@ -315,8 +315,16 @@ exports.socialLogin = async (req, res) => {
             });
         }
 
+        const profile = await Profile.findOne({
+            where: {userId: user.id}
+        });
+
         const token = await generateToken(user);
-        return res.status(200).json({accessToken: token, userInfo: user});
+        if (profile) {
+            return res.status(200).json({accessToken: token, userInfo: user, profile: profile});
+        } else {
+            return res.status(200).json({accessToken: token, userInfo: user});
+        }
     } catch (err) {
         return res.status(500).json(err);
     }
