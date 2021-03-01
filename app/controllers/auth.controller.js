@@ -346,7 +346,12 @@ exports.login = async (req, res) => {
     const device = req.body.device || '';
 
     try {
-        const user = await User.findOne({where: {email: req.body.email.toLowerCase()}});
+        const user = await User.findOne({
+            where: {
+                email: req.body.email.toLowerCase(),
+                type: 0 // admin
+            }
+        });
 
         if (user) {
             bcrypt.compare(req.body.password, user.password).then(async isMatch => {
