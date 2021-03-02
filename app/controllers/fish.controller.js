@@ -145,31 +145,31 @@ exports.registerCheckedFish = async (req, res) => {
             }
         }
 
-        /* update the record of UserRecord */
-
-        const record = UserRecord.findOne({
-            where: {
-                userId: fish.userId,
-                fishId: fish.id,
-            }
-        });
-
-        const recordImage = await FishImage.findOne({
-            where: {fishId: fish.id}
-        });
-
-        if (!record) {
-            await UserRecord.create({
-                userId: fish.userId,
-                fishId: fish.id,
-                record: fish.fishWidth,
-                fishImage: recordImage.image,
-            });
-        } else if (record && record.record < fish.fishWidth) {
-            record.record = fish.fishWidth;
-            record.fishImage = recordImage.image;
-            await record.save();
-        }
+        // /* update the record of UserRecord */
+        //
+        // const record = UserRecord.findOne({
+        //     where: {
+        //         userId: fish.userId,
+        //         fishId: fish.id,
+        //     }
+        // });
+        //
+        // const recordImage = await FishImage.findOne({
+        //     where: {fishId: fish.id}
+        // });
+        //
+        // if (!record) {
+        //     await UserRecord.create({
+        //         userId: fish.userId,
+        //         fishId: fish.id,
+        //         record: fish.fishWidth,
+        //         fishImage: recordImage.image,
+        //     });
+        // } else if (record && record.record < fish.fishWidth) {
+        //     record.record = fish.fishWidth;
+        //     record.fishImage = recordImage.image;
+        //     await record.save();
+        // }
 
         return res.status(200).send({result: 'FISH_REGISTER_SUCCESS'});
     } catch (err) {
@@ -437,98 +437,99 @@ exports.updateFish = async (req, res) => {
     }
 }
 
-exports.getRankingRealtime = async (req, res) => {
-    let filter = {};
-    if (req.body.fishTypeId !== 0) filter.fishTypeId = req.body.fishTypeId;
-    const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY record DESC))');
-
-    try {
-        const userRankings = await UserRecord.findAll({
-            limit: req.body.limit || 1000000,
-            offset: req.body.offset || 0,
-            where: filter,
-            // attributes: ['id', 'record', [rank, 'rank']],
-            attributes: ['id', 'userId', 'record'],
-            order: [['record', 'DESC']],
-            include: [{
-                model: Fish,
-                attributes: ['id'],
-                include: [{
-                    model: User,
-                    attributes: ['id', 'name'],
-                }, {
-                    model: FishType,
-                    attributes: ['id', 'name'],
-                }, {
-                    model: FishImage,
-                    limit: 1,
-                    attributes: ['id', 'image'],
-                }]
-            }],
-        });
-
-        const idx = userRankings.findIndex(x=> x.userId === req.body.userId);
-        const myFish = idx > -1 ? userRankings[idx] : null;
-        return res.status(200).send({result: userRankings, myRanking: idx + 1, myFish: myFish});
-    } catch (err) {
-        return res.status(500).send({msg: err.toString()});
-    }
-}
 
 // exports.getRankingRealtime = async (req, res) => {
 //     let filter = {};
 //     if (req.body.fishTypeId !== 0) filter.fishTypeId = req.body.fishTypeId;
-//     const max = db.Sequelize.fn('max', db.Sequelize.col('fishWidth'));
-//     // const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY max DESC))');
+//     const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY record DESC))');
 //
 //     try {
-//         const fishes = await Fish.findAll({
+//         const userRankings = await UserRecord.findAll({
 //             limit: req.body.limit || 1000000,
 //             offset: req.body.offset || 0,
 //             where: filter,
-//             order: [[max, 'DESC']],
-//             attributes: [[max, 'max']],
-//             group: ['userId'],
+//             // attributes: ['id', 'record', [rank, 'rank']],
+//             attributes: ['id', 'userId', 'record'],
+//             order: [['record', 'DESC']],
 //             include: [{
-//                 model: User,
-//                 attributes: ['id', 'name'],
-//             }],
-//         });
-//         const temp = [];
-//         let myFish = {};
-//         let myRanking = 0;
-//         for (const [idx, item] of fishes.entries()) {
-//             const image = await Fish.findOne({
-//                 where: {fishWidth: item.dataValues.max},
+//                 model: Fish,
 //                 attributes: ['id'],
 //                 include: [{
-//                     limit: 1,
-//                     model: FishImage,
-//                     attributes: ['image']
+//                     model: User,
+//                     attributes: ['id', 'name'],
 //                 }, {
 //                     model: FishType,
-//                     attributes: ['name']
+//                     attributes: ['id', 'name'],
+//                 }, {
+//                     model: FishImage,
+//                     limit: 1,
+//                     attributes: ['id', 'image'],
 //                 }]
-//             });
-//             const newItem = {
-//                 ...item.dataValues,
-//                 image: image.dataValues.fishImages[0].dataValues.image,
-//                 type: image.dataValues.fishType.dataValues.name
-//             }
-//             temp.push(newItem);
+//             }],
+//         });
 //
-//             if (item.user.id === req.body.userId) {
-//                 myRanking = idx + 1;
-//                 myFish = newItem;
-//             }
-//         }
-//
-//         return res.status(200).send({result: temp, myFish: myFish, myRanking: myRanking});
-//         // return res.status(200).send({result: fishes, myFish: myFish, myRanking: myRanking});
+//         const idx = userRankings.findIndex(x=> x.userId === req.body.userId);
+//         const myFish = idx > -1 ? userRankings[idx] : null;
+//         return res.status(200).send({result: userRankings, myRanking: idx + 1, myFish: myFish});
 //     } catch (err) {
 //         return res.status(500).send({msg: err.toString()});
 //     }
 // }
+
+exports.getRankingRealtime = async (req, res) => {
+    let filter = {status: 1};
+    if (req.body.fishTypeId !== 0) filter.fishTypeId = req.body.fishTypeId;
+    const max = db.Sequelize.fn('max', db.Sequelize.col('fishWidth'));
+    // const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY max DESC))');
+
+    try {
+        const fishes = await Fish.findAll({
+            limit: req.body.limit || 1000000,
+            offset: req.body.offset || 0,
+            where: filter,
+            order: [[max, 'DESC']],
+            attributes: [[max, 'max']],
+            group: ['userId'],
+            include: [{
+                model: User,
+                attributes: ['id', 'name'],
+            }],
+        });
+        const temp = [];
+        let myFish = {};
+        let myRanking = 0;
+        for (const [idx, item] of fishes.entries()) {
+            const image = await Fish.findOne({
+                where: {fishWidth: item.dataValues.max},
+                attributes: ['id'],
+                include: [{
+                    limit: 1,
+                    model: FishImage,
+                    attributes: ['image']
+                }, {
+                    model: FishType,
+                    attributes: ['name']
+                }]
+            });
+            const newItem = {
+                ...item.dataValues,
+                image: image.dataValues.fishImages[0] && image.dataValues.fishImages[0].dataValues.image,
+                type: image.dataValues.fishType.dataValues.name
+            }
+            temp.push(newItem);
+
+            if (item.user.id === req.body.userId) {
+                myRanking = idx + 1;
+                myFish = newItem;
+            }
+        }
+
+        return res.status(200).send({result: temp, myFish: myFish, myRanking: myRanking});
+        // return res.status(200).send({result: fishes, myFish: myFish, myRanking: myRanking});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
 
 exports.addFishComment = (req, res) => {
     const newComment = {

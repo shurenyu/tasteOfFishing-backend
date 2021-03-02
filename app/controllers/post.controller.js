@@ -26,9 +26,11 @@ exports.registerPost = async (req, res) => {
             where: {userId: req.body.userId}
         });
 
-        profile.exp += 100;
-        profile.level = Math.floor(profile.exp / 1000);
-        await profile.save();
+        if (profile) {
+            profile.exp += 100;
+            profile.level = Math.floor(profile.exp / 1000);
+            await profile.save();
+        }
 
         return res.status(200).send({result: 'POST_REGISTER_SUCCESS', data: data.id});
     } catch (err) {
@@ -187,7 +189,7 @@ exports.updatePost = async (req, res) => {
         await post.save();
 
         if (req.body.images) {
-            const imageList = JSON.parse(req.body.images);
+            const imageList = JSON.parse(JSON.stringify(req.body.images));
             const images = imageList.map(x => ({
                 postId: postId,
                 image: x,
