@@ -78,7 +78,7 @@ exports.getPostByUser = async (req, res) => {
 };
 
 exports.getPostById = (req, res) => {
-    const postId = req.body.postId;
+    const postId = parseInt(req.body.postId);
     Post.findOne({
         where: {id: postId},
         include: [{
@@ -169,7 +169,7 @@ exports.searchPosts = (req, res) => {
 }
 
 exports.updatePost = async (req, res) => {
-    const postId = req.body.postId;
+    const postId = parseInt(req.body.postId);
 
     try {
         const post = await Post.findOne({
@@ -199,7 +199,7 @@ exports.updatePost = async (req, res) => {
                 where: {postId: postId}
             });
 
-            await PostImage.bulkCreate(imageList, {returning: true});
+            await PostImage.bulkCreate(images, {returning: true});
         }
 
         return res.status(200).send({result: 'POST_UPDATE_SUCCESS'});
