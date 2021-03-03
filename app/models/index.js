@@ -46,6 +46,7 @@ db.postImage = require("./postImage.model")(sequelize, Sequelize);
 db.postComment = require("./postComment.model")(sequelize, Sequelize);
 db.postCommentReply = require("./postCommentReply.model")(sequelize, Sequelize);
 db.profile = require("./profile.model")(sequelize, Sequelize);
+db.pushToken = require("./pushToken.model")(sequelize, Sequelize);
 db.question = require("./question.model")(sequelize, Sequelize);
 db.quickMemo = require("./quickMemo.model")(sequelize, Sequelize);
 db.report = require("./report.model")(sequelize, Sequelize);

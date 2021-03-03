@@ -133,39 +133,36 @@ exports.getAllPosts = (req, res) => {
             const count = await Post.count();
             return res.status(200).send({result: data, totalCount: count});
         }).catch(err => {
-            return res.status(500).send({msg: err.toString()});
-        })
-};
-
-exports.searchPosts = (req, res) => {
-    const keyword = req.body.keyword;
-    Post.findAll({
-        limit: req.body.limit || 1000000,
-        offset: req.body.offset || 0,
-        order: [['createdDate', 'DESC']],
-        include: [{
-            model: User,
-            attributes: ['id', 'name']
-        }, {
-            model: PostImage
-        }],
-        where: {
-            content: {
-                [Op.like]: '%' + keyword + '%'
-            }
-        }
-    }).then(async data => {
-        const count = await Post.count({
-            where: {
-                content: {
-                    [Op.like]: '%' + keyword + '%'
-                }
-            }
-        });
-        return res.status(200).send({result: data, totalCount: count});
-    }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
+};
+
+exports.searchPosts = async (req, res) => {
+    const keyword = req.body.keyword;
+
+    try {
+        const [result, metadata] = await db.sequelize.query(`
+            SELECT posts.*, users.id, users.name 
+            FROM posts 
+            INNER JOIN users ON users.id = posts.userId
+            INNER JOIN postImages ON postImages.postId = posts.id
+            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%'
+            ORDER BY createdDate DESC
+            LIMIT ${req.body.limit || 1000000}
+            OFFSET ${req.body.offset || 0}
+        `);
+
+        const [count, metadata2] = await db.sequelize.query(`
+            SELECT COUNT(posts.id) AS count
+            FROM posts 
+            INNER JOIN users ON users.id = posts.userId
+            INNER JOIN postImages ON postImages.postId = posts.id
+            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%'
+        `)
+        return res.status(200).send({result: result, totalCount: count[0].count});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
 }
 
 exports.updatePost = async (req, res) => {

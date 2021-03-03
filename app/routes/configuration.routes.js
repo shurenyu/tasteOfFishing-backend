@@ -58,4 +58,10 @@ module.exports = function (app) {
         controller.deleteBanner
     );
 
+    app.all(
+        "/push-notification/token/register",
+        [authJwt.verifyToken],
+        controller.registerTokenForPush
+    );
+
 };

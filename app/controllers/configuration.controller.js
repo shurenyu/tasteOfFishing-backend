@@ -1,6 +1,7 @@
 const db = require("../models");
 const FishType = db.fishType;
 const Banner = db.banner;
+const PushToken = db.pushToken;
 
 exports.registerFishType = (req, res) => {
     const data = {
@@ -122,3 +123,29 @@ exports.deleteBanner = (req, res) => {
         return res.status(500).send({msg: err.toString()});
     })
 };
+
+exports.registerTokenForPush = async (req, res) => {
+    const userId = req.body.userId;
+    const token = req.body.token;
+
+    try {
+        const item = await PushToken.findOne({
+            where: {userId: userId}
+        });
+
+        if (item) {
+            item.token = token;
+            item.updatedDate = new Date();
+            await item.save();
+        } else {
+            await PushToken.create({
+                userId: userId,
+                token: token,
+                createdDate: new Date()
+            });
+        }
+        return res.status(200).send({result: 'PUSH_TOKEN_REGISTER_SUCCESS'});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}

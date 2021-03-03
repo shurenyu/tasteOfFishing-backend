@@ -2,8 +2,11 @@ const db = require("../models");
 const Notice = db.notice;
 const NoticeType = db.noticeType;
 const UserNotice = db.userNotice;
+const PushToken = db.pushToken;
+const config = require("../config/firebase.config");
+// const {sendNotification} = require("../utils/push-notification")
 
-exports.registerNotice = (req, res) => {
+exports.registerNotice = async (req, res) => {
     const newNotice = {
         noticeTypeId: req.body.noticeTypeId,
         title: req.body.title,
@@ -11,13 +14,20 @@ exports.registerNotice = (req, res) => {
         createdDate: new Date(),
     };
 
-    Notice.create(newNotice)
-        .then(async data => {
-            return res.status(200).send({result: 'NOTICE_REGISTER_SUCCESS', data: data});
-        })
-        .catch(err => {
-            return res.status(500).send({msg: err.toString()});
-        })
+    try {
+        const notice = await Notice.create(newNotice);
+        res.status(200).send({result: 'NOTICE_REGISTER_SUCCESS', data: notice});
+
+        const message = {}
+        config.admin.messaging().sendMulticast(message).then(response => {
+            console.log("Notification sent successfully");
+        }).catch(err => {
+            console.log(err.toString());
+        });
+
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
 };
 
 exports.getAllNotice = async (req, res) => {
