@@ -12,11 +12,188 @@ const UserStyle = db.userStyle;
 const FishType = db.fishType;
 const DiaryComment = db.diaryComment;
 const Op = db.Sequelize.Op;
+const {getSubTokens, sendNotification} = require("../utils/push-notification");
+
+const updateRecordAndSendMessage = async (fish) => {
+    /* update the record of userCompetition */
+
+    try {
+        const competition = await Competition.findOne({
+            where: {
+                id: fish.competitionId
+            }
+        });
+
+        const filter = {
+            userId: fish.userId,
+            competitionId: fish.competitionId,
+        }
+
+        const userCompetition = await UserCompetition.findOne({
+            where: filter
+        });
+
+        let isSendMsg = false;
+
+        if (userCompetition !== null) {
+            let newRecord;
+
+            if (competition.mode === 1) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record1', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
+
+                userCompetition.record1 = await Fish.sum('fishWidth', {
+                    limit: competition.rankFishNumber,
+                    order: [['fishWidth', 'DESC']],
+                    where: filter
+                });
+                await userCompetition.save();
+
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record1', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+
+                const newWinners = temp.map(x => x.userId);
+
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
+            } else if (competition.mode === 2) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record2', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
+
+                userCompetition.record2 = await Fish.max('fishWidth', {
+                    where: filter
+                });
+                await userCompetition.save();
+
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record2', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const newWinners = temp.map(x => x.userId);
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
+
+            } else if (competition.mode === 3) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record3', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
+
+                newRecord = userCompetition.record3 + 1;
+                userCompetition.record3 = newRecord;
+                await userCompetition.save();
+
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record3', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+
+                const newWinners = temp.map(x => x.userId);
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
+
+            } else if (competition.mode === 4) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record4', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
+
+                if (fish.fishWidth >= competition.questFishWidth) {
+                    userCompetition.record4 = userCompetition.record4 + 1;
+                    await userCompetition.save();
+                }
+
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record4', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+
+                const newWinners = temp.map(x => x.userId);
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
+
+            } else if (competition.mode === 5) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record5', 'ASC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
+
+                if (Math.abs(userCompetition.record5) > Math.abs(fish.fishWidth - competition.questSpecialWidth)) {
+                    userCompetition.record5 = fish.fishWidth - competition.questSpecialWidth;
+                    await userCompetition.save();
+                }
+
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record5', 'ASC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+
+                const newWinners = temp.map(x => x.userId);
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
+
+            }
+        }
+
+        // push notification
+        if (isSendMsg) {
+            const temp = await UserCompetition.findAll({
+                where: {
+                    competitionId: competition.id
+                }
+            });
+            const userIds = temp.map(x => x.userId);
+
+            const registeredTokens = await getSubTokens(userIds);
+            await sendNotification(registeredTokens, '참여중인 대회의 랭킹에 변동이 생겼어요!');
+        }
+
+        return 1;
+    } catch (err) {
+        return 0
+    }
+}
 
 exports.commitFish = async (req, res) => {
     const newFish = {
         ...req.body,
-        status: 3, // pending status
+        status: 1, // registered
         registerDate: new Date(),
     };
 
@@ -32,13 +209,13 @@ exports.commitFish = async (req, res) => {
     });
 
     if (competition) {
-        Fish.create(newFish)
-            .then(data => {
-                return res.status(200).send({result: 'DIARY_FISH_COMMIT_SUCCESS', data: {id: data.id, registerDate: data.registerDate}});
-            })
-            .catch(err => {
-                return res.status(500).send({msg: err.toString()});
-            })
+        try {
+            const fish = await Fish.create(newFish);
+            res.status(200).send({result: 'DIARY_FISH_COMMIT_SUCCESS', data: {id: fish.id, registerDate: fish.registerDate}});
+            await updateRecordAndSendMessage(fish);
+        } catch (err) {
+            return res.status(500).send({msg: err.toString()});
+        }
     } else {
         return res.status(404).send({msg: 'COMPETITION_DURATION_ERROR'});
     }
@@ -90,6 +267,8 @@ exports.registerCheckedFish = async (req, res) => {
 
         await fish.save();
 
+        res.status(200).send({result: 'FISH_REGISTER_SUCCESS'});
+
         /* update the record of userCompetition */
 
         const competition = await Competition.findOne({
@@ -107,8 +286,20 @@ exports.registerCheckedFish = async (req, res) => {
             where: filter
         });
 
+        let isSendMsg = false;
+
         if (userCompetition !== null) {
+            let newRecord;
+
             if (competition.mode === 1) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record1', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
 
                 userCompetition.record1 = await Fish.sum('fishWidth', {
                     limit: competition.rankFishNumber,
@@ -117,32 +308,133 @@ exports.registerCheckedFish = async (req, res) => {
                 });
                 await userCompetition.save();
 
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record1', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+
+                const newWinners = temp.map(x => x.userId);
+
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
             } else if (competition.mode === 2) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record2', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
 
                 userCompetition.record2 = await Fish.max('fishWidth', {
                     where: filter
                 });
                 await userCompetition.save();
 
-            } else if (competition.mode === 3) {
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record2', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const newWinners = temp.map(x => x.userId);
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
 
-                userCompetition.record3 = userCompetition.record3 + 1;
+            } else if (competition.mode === 3) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record3', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
+
+                newRecord = userCompetition.record3 + 1;
+                userCompetition.record3 = newRecord;
                 await userCompetition.save();
 
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record3', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+
+                const newWinners = temp.map(x => x.userId);
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
+
             } else if (competition.mode === 4) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record4', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
 
                 if (fish.fishWidth >= competition.questFishWidth) {
                     userCompetition.record4 = userCompetition.record4 + 1;
                     await userCompetition.save();
                 }
 
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record4', 'DESC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+
+                const newWinners = temp.map(x => x.userId);
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
+
             } else if (competition.mode === 5) {
+                let temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record5', 'ASC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+                const oldWinners = temp.map(x => x.userId);
 
                 if (Math.abs(userCompetition.record5) > Math.abs(fish.fishWidth - competition.questSpecialWidth)) {
                     userCompetition.record5 = fish.fishWidth - competition.questSpecialWidth;
                     await userCompetition.save();
                 }
+
+                temp = await UserCompetition.findAll({
+                    limit: 3,
+                    order: [['record5', 'ASC']],
+                    where: {
+                        competitionId: competition.id
+                    }
+                });
+
+                const newWinners = temp.map(x => x.userId);
+                isSendMsg = JSON.stringify(oldWinners) !== JSON.stringify(newWinners);
+
             }
+        }
+
+        // push notification
+        if (isSendMsg) {
+            const temp = await UserCompetition.findAll({
+                where: {
+                    competitionId: competition.id
+                }
+            });
+            const userIds = temp.map(x => x.userId);
+
+            const registeredTokens = await getSubTokens(userIds);
+            await sendNotification(registeredTokens, '참여중인 대회의 랭킹에 변동이 생겼어요!');
         }
 
         // /* update the record of UserRecord */
@@ -170,8 +462,7 @@ exports.registerCheckedFish = async (req, res) => {
         //     record.fishImage = recordImage.image;
         //     await record.save();
         // }
-
-        return res.status(200).send({result: 'FISH_REGISTER_SUCCESS'});
+        return 1;
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }
@@ -243,7 +534,6 @@ exports.getDiariesByUser = (req, res) => {
     })
 };
 
-
 exports.searchDiary = (req, res) => {
     const userId = req.body.userId;
     let filter = {};
@@ -279,7 +569,6 @@ exports.searchDiary = (req, res) => {
         return res.status(500).send({msg: err.toString()});
     })
 };
-
 
 exports.getFishesByCompetition = (req, res) => {
     const competitionId = req.body.competitionId;
@@ -430,8 +719,10 @@ exports.updateFish = async (req, res) => {
         }
 
         await fish.save();
+        res.status(200).send({result: 'FISH_UPDATE_SUCCESS'});
 
-        return res.status(200).send({result: 'FISH_UPDATE_SUCCESS'});
+        await updateRecordAndSendMessage(fish);
+
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }

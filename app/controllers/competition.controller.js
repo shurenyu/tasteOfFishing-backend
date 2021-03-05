@@ -8,6 +8,7 @@ const User = db.user;
 const Profile = db.profile;
 const UserStyle = db.userStyle;
 const Op = db.Sequelize.Op;
+const {getSubTokens, sendNotification} = require("../utils/push-notification");
 
 const validCompetition = (start, end) => {
     const startDate = new Date(start).getTime();
@@ -155,6 +156,37 @@ exports.registerCompetition = async (req, res) => {
                 await profile.save();
             }
         })
+
+        // push notification
+        const startNoticeDate = new Date(competition.startDate).getTime() - 24 * 3600000;
+        const job1 = schedule.scheduleJob(new Date(startNoticeDate), async function () {
+            const userCompetition = await UserCompetition.findAll({
+                where: {competitionId: competition.id}
+            });
+
+            const userIds = [];
+            for (const item of userCompetition) {
+                userIds.push(item.userId);
+            }
+
+            const registeredTokens = await getSubTokens(userIds);
+            await sendNotification([registeredTokens], '곧 대회가 시작되요!');
+        });
+
+        const endNoticeDate = new Date(competition.endDate).getTime() - 24 * 3600000;
+        const job2 = schedule.scheduleJob(new Date(endNoticeDate), async function () {
+            const userCompetition = await UserCompetition.findAll({
+                where: {competitionId: competition.id}
+            });
+
+            const userIds = [];
+            for (const item of userCompetition) {
+                userIds.push(item.userId);
+            }
+
+            const registeredTokens = await getSubTokens(userIds);
+            await sendNotification([registeredTokens], '곧 대회가 종료되요!');
+        });
 
         return res.status(200).send({result: 'COMPETITION.REGISTER', data: competition.id});
     } catch (err) {

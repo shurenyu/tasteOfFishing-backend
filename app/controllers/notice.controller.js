@@ -4,7 +4,8 @@ const NoticeType = db.noticeType;
 const UserNotice = db.userNotice;
 const PushToken = db.pushToken;
 const config = require("../config/firebase.config");
-// const {sendNotification} = require("../utils/push-notification")
+const {sendNotification} = require("../utils/push-notification")
+const {getAllTokens} = require("../utils/push-notification")
 
 exports.registerNotice = async (req, res) => {
     const newNotice = {
@@ -18,12 +19,9 @@ exports.registerNotice = async (req, res) => {
         const notice = await Notice.create(newNotice);
         res.status(200).send({result: 'NOTICE_REGISTER_SUCCESS', data: notice});
 
-        const message = {}
-        config.admin.messaging().sendMulticast(message).then(response => {
-            console.log("Notification sent successfully");
-        }).catch(err => {
-            console.log(err.toString());
-        });
+        const tokens = await getAllTokens();
+
+        return await sendNotification(tokens, '공지가 등록되었습니다');
 
     } catch (err) {
         return res.status(500).send({msg: err.toString()});

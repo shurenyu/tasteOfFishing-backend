@@ -1,3 +1,5 @@
+const {getSubTokens, sendNotification} = require("../utils/push-notification");
+
 const db = require("../models");
 const Post = db.post;
 const PostComment = db.postComment;
@@ -238,8 +240,15 @@ exports.registerPostComment = (req, res) => {
             profile.exp += 50;
             profile.level = Math.floor(profile.exp / 1000);
             await profile.save();
+            res.status(200).send({result: 'POST_COMMENT_REGISTER_SUCCESS', data: data.id});
 
-            return res.status(200).send({result: 'POST_COMMENT_REGISTER_SUCCESS', data: data.id});
+            // push notification
+            const post = await Post.findOne({
+                where: {id: req.body.postId}
+            });
+            const owner = post.userId;
+            const registeredToken = await getSubTokens(owner.id);
+            return sendNotification([registeredToken], '작성하신 게시물에 댓글이 달렸습니다');
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});

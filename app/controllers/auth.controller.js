@@ -15,7 +15,8 @@ const bcrypt = require("bcryptjs");
 const sendMail = require("../utils/email");
 const makeMailFromTemplate = require("../utils/email/mailTemplate");
 const google = require("googleapis");
-// import { google } from 'googleapis';
+const schedule = require('node-schedule');
+const {getSubTokens, sendNotification} = require("../utils/push-notification");
 
 const generateToken = async (user) => {
     const payload = {
@@ -220,13 +221,21 @@ exports.appLogin = async (req, res) => {
             bcrypt.compare(req.body.password, generalInfo.password).then(async isMatch => {
                 if (isMatch) {
                     const token = await generateToken(generalInfo);
-                    return res.status(200).json({accessToken: token, userInfo: user, userRecord: userRecord});
+                    res.status(200).json({accessToken: token, userInfo: user, userRecord: userRecord});
+
+                    // push notification after 7 days
+                    const after7days = new Date().getTime() + 7 * 24 * 3600000;
+
+                    const job = schedule.scheduleJob(new Date(after7days), async function () {
+                        const registeredToken = await getSubTokens(generalInfo.id);
+                        return sendNotification([registeredToken], '낚시의맛을 이용하신지 1주일이 넘었어요! ');
+                    });
                 } else {
-                    return res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
+                    res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
                 }
             }).catch(err => res.status(500).json({msg: err.toString()}));
         } else {
-            return res.status(404).json({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
+            res.status(404).json({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
         }
     } catch (err) {
         return res.status(500).json({msg: err.toString()})
