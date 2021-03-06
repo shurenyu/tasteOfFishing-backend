@@ -3,6 +3,9 @@ module.exports = (sequelize, Sequelize) => {
         userId: {
             type: Sequelize.INTEGER(21)
         },
+        link: {
+            type: Sequelize.STRING(1024)
+        },
         content: {
             type: Sequelize.TEXT
         },
