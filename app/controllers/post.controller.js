@@ -119,7 +119,7 @@ exports.getAllPosts = (req, res) => {
         order: [['createdDate', 'DESC']],
         include: [{
             model: User,
-            attributes: ['id', 'name'],
+            attributes: ['id', 'name', 'type'],
             include: [{
                 model: Profile,
                 attributes: ['id', 'avatar']
