@@ -13,6 +13,7 @@ exports.registerPost = async (req, res) => {
     try {
         const data = await Post.create({
             userId: req.body.userId,
+            link: req.body.link || '',
             content: req.body.content,
             createdDate: new Date(),
         });

@@ -4,7 +4,8 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER(21)
         },
         link: {
-            type: Sequelize.STRING(1024)
+            type: Sequelize.STRING(1024),
+            defaultValue: '',
         },
         content: {
             type: Sequelize.TEXT
