@@ -804,6 +804,7 @@ exports.getRankingRealtime = async (req, res) => {
             });
             const newItem = {
                 ...item.dataValues,
+                fishId: image.dataValues.id,
                 image: image.dataValues.fishImages[0] && image.dataValues.fishImages[0].dataValues.image,
                 type: image.dataValues.fishType.dataValues.name
             }

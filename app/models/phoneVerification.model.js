@@ -4,7 +4,7 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER(21)
         },
         phoneNumber: {
-            type: Sequelize.STRING(15)
+            type: Sequelize.STRING(20)
         },
         sessionId: {
             type: Sequelize.STRING(30)
