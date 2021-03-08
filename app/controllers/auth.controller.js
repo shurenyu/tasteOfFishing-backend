@@ -220,9 +220,22 @@ exports.appLogin = async (req, res) => {
         if (generalInfo) {
             bcrypt.compare(req.body.password, generalInfo.password).then(async isMatch => {
                 if (isMatch) {
+                    const oldUpdated = generalInfo.updatedDate;
+                    generalInfo.updatedDate = new Date();
+                    await generalInfo.save();
                     const token = await generateToken(generalInfo);
                     res.status(200).json({accessToken: token, userInfo: user, userRecord: userRecord});
 
+                    // added 10 point
+                    if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000) {
+                        const profile = await Profile.findOne({
+                            where: {userId: generalInfo.id}
+                        });
+                        profile.pointAmount += 10;
+                        await profile.save();
+                        const registeredToken = await getSubTokens(generalInfo.id);
+                        sendNotification([registeredToken], '출석보상 10P입금!');
+                    }
                     // push notification after 7 days
                     const after7days = new Date().getTime() + 7 * 24 * 3600000;
 
