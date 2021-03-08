@@ -90,7 +90,9 @@ exports.getProfileByUserId = (req, res) => {
 exports.getAllUsers = async (req, res) => {
     try {
         const userCount = await User.count({
-            where: {type: 1}
+            where: {
+                type: {[Op.gt]: 0}
+            }
         });
 
         const users = await User.findAll({
