@@ -98,7 +98,9 @@ exports.getAllUsers = async (req, res) => {
         const users = await User.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
-            where: {type: 1},
+            where: {
+                type: {[Op.gt]: 0}
+            },
             attributes: {exclude: ['password']},
         });
 
