@@ -7,6 +7,7 @@ const PostCommentReply = db.postCommentReply;
 const PostImage = db.postImage;
 const User = db.user;
 const Profile = db.profile;
+const Report = db.report;
 const Op = db.Sequelize.Op;
 
 exports.registerPost = async (req, res) => {
@@ -377,4 +378,26 @@ exports.deletePostCommentReply = (req, res) => {
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
+};
+
+exports.deletePostAndUpdateReport = async (req, res) => {
+    const reportId = req.body.reportId;
+    const postId = req.body.postId;
+
+    try {
+        await Post.destroy({
+            where: {id: postId}
+        });
+
+        const report = await Report.findOne({
+            where: {id: reportId}
+        });
+
+        report.status = 2;
+        await report.save();
+
+        return res.status(200).send({result: 'SUCCESS'});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
 };

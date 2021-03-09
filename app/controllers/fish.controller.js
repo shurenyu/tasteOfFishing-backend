@@ -11,6 +11,7 @@ const Profile = db.profile;
 const UserStyle = db.userStyle;
 const FishType = db.fishType;
 const DiaryComment = db.diaryComment;
+const Report = db.report;
 const Op = db.Sequelize.Op;
 const {getSubTokens, sendNotification} = require("../utils/push-notification");
 
@@ -662,6 +663,7 @@ exports.getFishesByMultiFilter = async (req, res) => {
     try {
         const competitionId = req.body.competitionId;
         const status = req.body.status;
+        const order = req.body.order;
 
         let filter = {};
 
@@ -675,6 +677,7 @@ exports.getFishesByMultiFilter = async (req, res) => {
         const fishes = await Fish.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
+            order: [[order === 0 ? 'registerDate' : 'fishWidth', 'DESC']],
             where: filter,
             include: [{
                 model: User,
@@ -723,6 +726,42 @@ exports.updateFish = async (req, res) => {
 
         await updateRecordAndSendMessage(fish);
 
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
+
+exports.deleteFish = (req, res) => {
+    const fishId = req.body.fishId;
+    Fish.destroy({
+        where: {id: fishId}
+    }).then(data => {
+        if (data === 0) {
+            return res.status(404).send({msg: 'INVALID_ID'});
+        }
+        return res.status(200).send({result: 'FISH_DELETE_SUCCESS'});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
+
+exports.deleteFishAndUpdateReport = async (req, res) => {
+    const reportId = req.body.reportId;
+    const fishId = req.body.fishId;
+
+    try {
+        await Fish.destroy({
+            where: {id: fishId}
+        });
+
+        const report = await Report.findOne({
+            where: {id: reportId}
+        });
+
+        report.status = 2;
+        await report.save();
+
+        return res.status(200).send({result: 'SUCCESS'});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }

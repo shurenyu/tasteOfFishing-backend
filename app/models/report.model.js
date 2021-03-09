@@ -9,6 +9,14 @@ module.exports = (sequelize, Sequelize) => {
         content: {
             type: Sequelize.TEXT
         },
+        postId: {
+            type: Sequelize.INTEGER(21),
+            defaultValue: 0,
+        },
+        fishId: {
+            type: Sequelize.INTEGER(21),
+            defaultValue: 0,
+        },
         status: {
             type: Sequelize.STRING(2)
         },

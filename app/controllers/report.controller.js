@@ -1,6 +1,11 @@
 const db = require("../models");
 const Report = db.report;
 const User = db.user;
+const Fish = db.fish;
+const FishType = db.fishType;
+const FishImage = db.fishImage;
+const Post = db.post;
+const PostImage = db.postImage;
 
 exports.registerReport = (req, res) => {
     const newReport = {
@@ -8,6 +13,7 @@ exports.registerReport = (req, res) => {
         reporterId: req.body.reporterId,
         type: req.body.type,
         content: req.body.content,
+        reportObjectId: req.body.reportObjectId,
         status: 1,
         createdDate: new Date(),
         updatedDate: new Date(),
@@ -107,8 +113,6 @@ exports.deleteReport = (req, res) => {
 };
 
 exports.getReportByFilter = (req, res) => {
-    // Report.hasOne(User, {as: 'user', sourceKey: 'userId', foreignKey: 'id'});
-    // Report.hasOne(User, {as: 'reporter', sourceKey: 'reporterId', foreignKey: 'id'});
 
     let filter = {};
     if (req.body.status) filter.status = req.body.status;
@@ -116,6 +120,7 @@ exports.getReportByFilter = (req, res) => {
     Report.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
+        order: [['createdDate', 'ASC']],
         where: filter,
         include: [{
             model: User,
@@ -125,6 +130,19 @@ exports.getReportByFilter = (req, res) => {
             model: User,
             as: 'reporter',
             attributes: ['id', 'name']
+        }, {
+            model: Fish,
+            attributes: ['id', 'fishWidth'],
+            include: [{
+                model: FishImage,
+            }, {
+                model: FishType,
+            }]
+        }, {
+            model: Post,
+            include: [{
+                model: PostImage,
+            }]
         }]
     }).then(async data => {
         const count = await Report.count({where: filter});

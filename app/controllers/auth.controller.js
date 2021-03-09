@@ -227,7 +227,9 @@ exports.appLogin = async (req, res) => {
                     res.status(200).json({accessToken: token, userInfo: user, userRecord: userRecord});
 
                     // added 10 point
-                    if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000) {
+                    if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
+                        || new Date().getDate() !== oldUpdated.getDate())
+                    {
                         const profile = await Profile.findOne({
                             where: {userId: generalInfo.id}
                         });
@@ -241,7 +243,7 @@ exports.appLogin = async (req, res) => {
 
                     const job = schedule.scheduleJob(new Date(after7days), async function () {
                         const registeredToken = await getSubTokens(generalInfo.id);
-                        return sendNotification([registeredToken], '낚시의맛을 이용하신지 1주일이 넘었어요! ');
+                        return sendNotification([registeredToken], '낚시의맛을 이용하신지 1주일이 넘었어요!');
                     });
                 } else {
                     res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});

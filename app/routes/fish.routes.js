@@ -71,6 +71,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/fish/delete",
+        [authJwt.verifyToken],
+        controller.deleteFish
+    );
+
+    app.all(
         "/diary/update",
         [authJwt.verifyToken],
         controller.updateFish
@@ -99,6 +105,12 @@ module.exports = function (app) {
         "/diary/search",
         [authJwt.verifyToken],
         controller.searchDiary
+    );
+
+    app.all(
+        "/fish/delete/report/update",
+        [authJwt.verifyToken],
+        controller.deleteFishAndUpdateReport
     );
 
 };

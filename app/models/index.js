@@ -78,6 +78,8 @@ db.postComment.hasOne(db.postCommentReply);
 db.postComment.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
 db.report.hasOne(db.user, {as: 'user', sourceKey: 'userId', foreignKey: 'id'});
 db.report.hasOne(db.user, {as: 'reporter', sourceKey: 'reporterId', foreignKey: 'id'});
+db.report.hasOne(db.fish, {sourceKey: 'fishId', foreignKey: 'id'});
+db.report.hasOne(db.post, {sourceKey: 'postId', foreignKey: 'id'});
 db.userRecord.hasOne(db.fish, {sourceKey: 'fishId', foreignKey: 'id'});
 db.profile.hasOne(db.userStyle, {sourceKey: 'userStyleId', foreignKey: 'id'});
 // db.userRecord.hasOne(db.fishType, {sourceKey: 'fishTypeId', foreignKey: 'id'});

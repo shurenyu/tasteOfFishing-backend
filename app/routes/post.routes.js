@@ -105,4 +105,11 @@ module.exports = function (app) {
         [authJwt.verifyToken],
         controller.searchPosts
     );
+
+
+    app.all(
+        "/post/delete/report/update",
+        [authJwt.verifyToken],
+        controller.deletePostAndUpdateReport
+    );
 };
