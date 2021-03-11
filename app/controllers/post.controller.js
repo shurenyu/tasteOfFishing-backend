@@ -145,12 +145,13 @@ exports.searchPosts = async (req, res) => {
     const keyword = req.body.keyword;
 
     try {
-        const [result, metadata] = await db.sequelize.query(`
-            SELECT posts.*, users.id, users.name 
+        const [posts, metadata] = await db.sequelize.query(`
+            SELECT posts.*, users.name, postImages.postId, postImages.image, profiles.username, profiles.avatar
             FROM posts 
             INNER JOIN users ON users.id = posts.userId
+            INNER JOIN profiles ON users.id = profiles.userId
             INNER JOIN postImages ON postImages.postId = posts.id
-            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%'
+            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username like '%${keyword}%'
             ORDER BY createdDate DESC
             LIMIT ${req.body.limit || 1000000}
             OFFSET ${req.body.offset || 0}
@@ -160,9 +161,37 @@ exports.searchPosts = async (req, res) => {
             SELECT COUNT(posts.id) AS count
             FROM posts 
             INNER JOIN users ON users.id = posts.userId
+            INNER JOIN profiles ON users.id = profiles.userId
             INNER JOIN postImages ON postImages.postId = posts.id
-            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%'
+            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username like '%${keyword}%'
         `)
+
+        let result = [];
+        for (const x of posts) {
+            const idx = result.findIndex(y => y.id === x.id);
+            if (idx === -1) {
+                const duplicates = posts.filter(y => y.id === x.id);
+                const postImages = duplicates.map(y => y.image);
+                result.push({
+                    id: x.id,
+                    userId: x.userId,
+                    link: x.link,
+                    content: x.content,
+                    createdDate: x.createdDate,
+                    updatedDate: x.updatedDate,
+                    user: {
+                        id: x.userId,
+                        name: x.name,
+                        profile: {
+                            avatar: x.avatar,
+                            username: x.username,
+                        }
+                    },
+                    postImages: postImages,
+                })
+            }
+        }
+
         return res.status(200).send({result: result, totalCount: count[0].count});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
