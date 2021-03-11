@@ -60,7 +60,6 @@ module.exports = function (app) {
 
     app.all(
         "/push-notification/token/register",
-        [authJwt.verifyToken],
         controller.registerTokenForPush
     );
 
