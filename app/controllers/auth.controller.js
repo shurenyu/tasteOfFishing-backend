@@ -4,6 +4,7 @@ const User = db.user;
 const Profile = db.profile;
 const Competition = db.competition;
 const UserCompetition = db.userCompetition;
+const Fish = db.fish;
 const FishType = db.fishType;
 const EmailVerification = db.emailVerification;
 const EmailCertification = db.emailCertification;
@@ -226,22 +227,27 @@ exports.appLogin = async (req, res) => {
                     const token = await generateToken(generalInfo);
                     res.status(200).json({accessToken: token, userInfo: user, userRecord: userRecord});
 
-                    // added 10 point
-                    if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
-                        || new Date().getDate() !== oldUpdated.getDate())
-                    {
-                        const profile = await Profile.findOne({
-                            where: {userId: generalInfo.id}
-                        });
-                        profile.pointAmount += 10;
-                        await profile.save();
-                        const registeredToken = await getSubTokens(generalInfo.id);
-                        sendNotification([registeredToken], '출석보상 10P입금!');
-                    }
+                    // added 10 point after 10 min
+                    const after10min = new Date().getTime() + 10 * 60000;
+
+                    const job1 = schedule.scheduleJob(new Date(after10min), async function () {
+                        if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
+                            || new Date().getDate() !== oldUpdated.getDate())
+                        {
+                            const profile = await Profile.findOne({
+                                where: {userId: generalInfo.id}
+                            });
+                            profile.pointAmount += 10;
+                            await profile.save();
+                            const registeredToken = await getSubTokens(generalInfo.id);
+                            sendNotification([registeredToken], '출석보상 10P입금!');
+                        }
+                    });
+
                     // push notification after 7 days
                     const after7days = new Date().getTime() + 7 * 24 * 3600000;
 
-                    const job = schedule.scheduleJob(new Date(after7days), async function () {
+                    const job2 = schedule.scheduleJob(new Date(after7days), async function () {
                         const registeredToken = await getSubTokens(generalInfo.id);
                         return sendNotification([registeredToken], '낚시의맛을 이용하신지 1주일이 넘었어요!');
                     });
@@ -264,14 +270,18 @@ const getUserRecord = async (userId) => {
     let rankChampionshipCount = 0;
     let questChampionshipCount = 0;
 
+    totalDiaryCount = await Fish.count({
+        where: {
+            userId: userId
+        }
+    });
+    
     const myCompetitions = await UserCompetition.findAll({
         where: {userId: userId},
         include: [{
             model: Competition,
         }]
     });
-
-    totalDiaryCount = myCompetitions.length;
 
     for (const item of myCompetitions) {
         if (item.competition && item.competition.mode === 1) {
