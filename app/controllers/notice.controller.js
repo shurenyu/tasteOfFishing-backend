@@ -21,7 +21,7 @@ exports.registerNotice = async (req, res) => {
 
         const tokens = await getAllTokens();
 
-        return await sendNotification(tokens, '공지가 등록되었습니다');
+        return await sendNotification(tokens, {message: '공지가 등록되었습니다', noticeId: notice.id});
 
     } catch (err) {
         return res.status(500).send({msg: err.toString()});

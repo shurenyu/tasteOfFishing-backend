@@ -170,7 +170,7 @@ exports.registerCompetition = async (req, res) => {
             }
 
             const registeredTokens = await getSubTokens(userIds);
-            await sendNotification([registeredTokens], '곧 대회가 시작되요!');
+            await sendNotification([registeredTokens], {message: '곧 대회가 시작되요!', competitionId: competition.id});
         });
 
         const endNoticeDate = new Date(competition.endDate).getTime() - 24 * 3600000;
@@ -185,7 +185,7 @@ exports.registerCompetition = async (req, res) => {
             }
 
             const registeredTokens = await getSubTokens(userIds);
-            await sendNotification([registeredTokens], '곧 대회가 종료되요!');
+            await sendNotification([registeredTokens], {message: '곧 대회가 종료되요!', competitionId: competition.id});
         });
 
         return res.status(200).send({result: 'COMPETITION.REGISTER', data: competition.id});

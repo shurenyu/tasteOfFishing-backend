@@ -2,10 +2,10 @@ const config = require("../../config/firebase.config");
 const db = require("../../models");
 const PushToken = db.pushToken;
 
-exports.sendNotification = (tokens, message) => {
+exports.sendNotification = (tokens, sendData) => {
 	config.admin.messaging().sendMulticast({
 		tokens,
-		data: {message: message}
+		data: sendData
 	}).then(response => {
 		return console.log("Notification sent successfully");
 	}).catch(err => {

@@ -279,7 +279,7 @@ exports.registerPostComment = (req, res) => {
             });
             const owner = post.userId;
             const registeredToken = await getSubTokens(owner.id);
-            return sendNotification([registeredToken], '작성하신 게시물에 댓글이 달렸습니다');
+            return sendNotification([registeredToken], {message: '작성하신 게시물에 댓글이 달렸습니다', postId: post.id});
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});
