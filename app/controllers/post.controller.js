@@ -150,8 +150,8 @@ exports.searchPosts = async (req, res) => {
             FROM posts 
             INNER JOIN users ON users.id = posts.userId
             INNER JOIN profiles ON users.id = profiles.userId
-            INNER JOIN postImages ON postImages.postId = posts.id
-            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username like '%${keyword}%'
+            LEFT JOIN postImages ON postImages.postId = posts.id
+            WHERE users.name LIKE '%${keyword}%' OR 'content' LIKE '%${keyword}%' OR profiles.username LIKE '%${keyword}%'
             ORDER BY createdDate DESC
             LIMIT ${req.body.limit || 1000000}
             OFFSET ${req.body.offset || 0}
@@ -162,7 +162,7 @@ exports.searchPosts = async (req, res) => {
             FROM posts 
             INNER JOIN users ON users.id = posts.userId
             INNER JOIN profiles ON users.id = profiles.userId
-            INNER JOIN postImages ON postImages.postId = posts.id
+            LEFT JOIN postImages ON postImages.postId = posts.id
             WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username like '%${keyword}%'
         `)
 
@@ -171,7 +171,7 @@ exports.searchPosts = async (req, res) => {
             const idx = result.findIndex(y => y.id === x.id);
             if (idx === -1) {
                 const duplicates = posts.filter(y => y.id === x.id);
-                const postImages = duplicates.map(y => y.image);
+                const postImages = duplicates.map(y => ({image: y.image}));
                 result.push({
                     id: x.id,
                     userId: x.userId,
