@@ -892,3 +892,67 @@ exports.deleteFishComment = (req, res) => {
         return res.status(500).send({msg: err.toString()});
     })
 }
+
+exports.getMyDiaryInfo = async (req, res) => {
+    const userId = req.body.userId;
+    const year = req.body.year;
+
+    try {
+        const totalAttendingCount = await UserCompetition.count({
+            where: {userId: userId}
+        });
+
+        const maxFish = await Fish.max('fishWidth', {
+            where: {userId: userId}
+        });
+
+        // attending count per month
+
+        let attendingCounts = [];
+
+        for (let i = 0; i < 12; i++) {
+            const start = new Date(year, i, 1);
+            const end = new Date(year, i + 1, 1);
+
+            const countPerMonth = await UserCompetition.count({
+                where: {
+                    userId: userId,
+                    createdDate: {
+                        [Op.gte]: start.getTime(),
+                        [Op.lt]: end.getTime()
+                    }
+                }
+            });
+
+            attendingCounts.push(countPerMonth);
+        }
+
+        let diaryCounts = [];
+
+        for (let i = 0; i < 12; i++) {
+            const start = new Date(year, i, 1);
+            const end = new Date(year, i + 1, 1);
+            console.log('start: ', start)
+            console.log('end: ', end)
+
+            const diaryPerMonth = await Fish.count({
+                where: {
+                    userId: userId,
+                    registerDate: {
+                        [Op.gte]: start.getTime(),
+                        [Op.lt]: end.getTime()
+                    }
+                }
+            });
+
+            diaryCounts.push(diaryPerMonth);
+        }
+        console.log(typeof maxFish)
+
+        return res.status(200).send({totalAttendingCount, maxFish: maxFish.toFixed(2), attendingCounts, diaryCounts});
+
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+
+}

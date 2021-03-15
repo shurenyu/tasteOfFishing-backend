@@ -113,4 +113,11 @@ module.exports = function (app) {
         controller.deleteFishAndUpdateReport
     );
 
+    app.all(
+        "/diary/get-my-info",
+        [authJwt.verifyToken],
+        controller.getMyDiaryInfo
+    );
+
+
 };
