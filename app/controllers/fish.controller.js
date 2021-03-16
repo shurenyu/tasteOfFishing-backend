@@ -182,7 +182,10 @@ const updateRecordAndSendMessage = async (fish) => {
             const userIds = temp.map(x => x.userId);
 
             const registeredTokens = await getSubTokens(userIds);
-            await sendNotification(registeredTokens, '참여중인 대회의 랭킹에 변동이 생겼어요!');
+            await sendNotification(registeredTokens, {
+                message: '참여중인 대회의 랭킹에 변동이 생겼어요!',
+                competitionId: competition.id
+            });
         }
 
         return 1;
