@@ -70,6 +70,13 @@ module.exports = function (app) {
         controller.cancelCompetition
     );
 
+    app.all(
+        "/user/style-statistic",
+        [authJwt.verifyToken],
+        controller.getStyleStatistic
+    );
+
+
     // app.all(
     //     "/user/record/get",
     //     [authJwt.verifyToken],

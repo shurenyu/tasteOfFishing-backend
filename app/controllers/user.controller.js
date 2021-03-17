@@ -340,6 +340,24 @@ const getRecordByUser = async (userId) => {
     };
 }
 
+exports.getStyleStatistic = async (req, res) => {
+    try {
+        let result = [];
+        for (let i = 1; i < 9; i++) {
+            const temp = await Profile.count({
+                where: {
+                    userStyleId: i,
+                }
+            });
+
+            result.push(temp);
+        }
+        return res.status(200).send({result: result});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
+
 
 const Test = db.test
 exports.testing = async (req, res) => {
