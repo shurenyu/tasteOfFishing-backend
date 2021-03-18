@@ -87,7 +87,7 @@ exports.getPostById = (req, res) => {
         where: {id: postId},
         include: [{
             model: User,
-            attributes: ['id', 'name'],
+            attributes: ['id', 'name', 'type'],
             include: [{
                 model: Profile,
                 attributes: ['id', 'avatar']
@@ -100,7 +100,7 @@ exports.getPostById = (req, res) => {
                 model: PostCommentReply,
             }, {
                 model: User,
-                attributes: ['id', 'name'],
+                attributes: ['id', 'name', 'type'],
                 include: [{
                     model: Profile,
                     attributes: ['id', 'avatar']

@@ -18,6 +18,7 @@ const makeMailFromTemplate = require("../utils/email/mailTemplate");
 const google = require("googleapis");
 const schedule = require('node-schedule');
 const {getSubTokens, sendNotification} = require("../utils/push-notification");
+const {updatePoint} = require("./withdrawal.controller");
 
 const generateToken = async (user) => {
     const payload = {
@@ -221,28 +222,35 @@ exports.appLogin = async (req, res) => {
         if (generalInfo) {
             bcrypt.compare(req.body.password, generalInfo.password).then(async isMatch => {
                 if (isMatch) {
+                    let dailyCheck = false;
                     const oldUpdated = generalInfo.updatedDate;
                     generalInfo.updatedDate = new Date();
                     await generalInfo.save();
                     const token = await generateToken(generalInfo);
-                    res.status(200).json({accessToken: token, userInfo: user, userRecord: userRecord});
 
-                    // added 10 point after 10 min
-                    const after10min = new Date().getTime() + 10 * 60000;
+                    // if first login in the day
+                    if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
+                        || new Date().getDate() !== oldUpdated.getDate())
+                    {
+                        await updatePoint(user.id, 30, 1, '출석보상');
+                        dailyCheck = true;
+                    }
 
-                    const job1 = schedule.scheduleJob(new Date(after10min), async function () {
-                        if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
-                            || new Date().getDate() !== oldUpdated.getDate())
-                        {
-                            const profile = await Profile.findOne({
-                                where: {userId: generalInfo.id}
-                            });
-                            profile.pointAmount += 10;
-                            await profile.save();
-                            const registeredToken = await getSubTokens(generalInfo.id);
-                            sendNotification([registeredToken], {message: '출석보상 10P입금!', home: 3});
-                        }
-                    });
+                    // added 30 point after 10 min
+                    // const after10min = new Date().getTime() + 10 * 60000;
+                    //
+                    // const job1 = schedule.scheduleJob(new Date(after10min), async function () {
+                    //     if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
+                    //         || new Date().getDate() !== oldUpdated.getDate())
+                    //     {
+                    //
+                    //         await updatePoint(user.id, 30, 1, '출석보상');
+                    //         const registeredToken = await getSubTokens(generalInfo.id);
+                    //         sendNotification([registeredToken], {message: '출석보상 30P입금!', home: 3});
+                    //     }
+                    // });
+
+                    res.status(200).json({accessToken: token, userInfo: user, userRecord: userRecord, dailyCheck});
 
                     // push notification after 7 days
                     const after7days = new Date().getTime() + 7 * 24 * 3600000;

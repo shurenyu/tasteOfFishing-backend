@@ -5,7 +5,9 @@ const Profile = db.profile;
 const UserStyle = db.userStyle;
 const UserCompetition = db.userCompetition;
 const Competition = db.competition;
+const UserPoint = db.userPoint;
 const Op = db.Sequelize.Op;
+const {updatePoint} = require("./withdrawal.controller");
 
 /**
  * Register Profile
@@ -190,7 +192,7 @@ exports.attendCompetition = async (req, res) => {
 
         const profile = await Profile.findOne({
             where: {
-                userId: req.body.userId,
+                userId: userId,
             }
         });
 
@@ -205,7 +207,7 @@ exports.attendCompetition = async (req, res) => {
         });
 
         // update the pointAmount, level, exp, and style
-        profile.pointAmount -= attendPoint;
+        await updatePoint(userId, attendPoint, 0, '대회참여');
         profile.exp += 150;
         profile.level = Math.floor(profile.exp / 1000);
         const attendCount = await UserCompetition.count({
@@ -358,6 +360,27 @@ exports.getStyleStatistic = async (req, res) => {
     }
 }
 
+exports.getUserPointHistory = (req, res) => {
+    UserPoint.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['createdDate', 'DESC']],
+        where: {
+            userId: req.body.userId
+        }
+    }).then(async data => {
+        const count = await UserPoint.count({
+            where: {
+                userId: req.body.userId
+            }
+        })
+        return res.status(200).send({result: data, totalCount: count});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    });
+
+}
+
 
 const Test = db.test
 exports.testing = async (req, res) => {
@@ -384,7 +407,6 @@ exports.testing = async (req, res) => {
                     HAVING competitionId = 15 and rank < 4
                     ORDER BY uc.record1 DESC
                 `);
-
 
 
         return res.status(200).send({result: winners});

@@ -9,6 +9,7 @@ const Profile = db.profile;
 const UserStyle = db.userStyle;
 const Op = db.Sequelize.Op;
 const {getSubTokens, sendNotification} = require("../utils/push-notification");
+const {updatePoint} = require("./withdrawal.controller");
 
 const validCompetition = (start, end) => {
     const startDate = new Date(start).getTime();
@@ -24,11 +25,7 @@ const validCompetition = (start, end) => {
 
 const giveReward = async (userId, amount) => {
     try {
-        const profile = await Profile.findOne({
-            where: {userId: userId}
-        });
-        profile.pointAmount += parseInt(amount);
-        await profile.save();
+        await updatePoint(userId, parseInt(amount), 1, '대회상금');
         return 1;
     } catch (err) {
         return 0;

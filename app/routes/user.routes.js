@@ -77,11 +77,11 @@ module.exports = function (app) {
     );
 
 
-    // app.all(
-    //     "/user/record/get",
-    //     [authJwt.verifyToken],
-    //     controller.getRecordByUser
-    // );
+    app.all(
+        "/user/point-history",
+        [authJwt.verifyToken],
+        controller.getUserPointHistory
+    );
 
     app.all(
         "/test",
