@@ -48,19 +48,34 @@ exports.registerCompetition = async (req, res) => {
             ...req.body
         };
 
-        const competition = await Competition.create(newCompetition);
+        const contest = await Competition.create(newCompetition);
 
-        const endDate = new Date(competition.endDate);
-        const job = schedule.scheduleJob(endDate, async function () {
-            let winners1 = [];
-            let winners2 = [];
-            let winners3 = [];
+        let tmr = setInterval(async function () {
+            const now = new Date().getTime();
 
-            // give reward
+            const competition = await Competition.findOne({
+                where: {id: contest.id}
+            });
 
-            if (competition.mode === 1 || competition.mode === 5) {
-                console.log('-------------testing--------------', competition.mode)
-                const [winners, metadata] = await db.sequelize.query(`
+            const endDate = new Date(competition.endDate).getTime();
+            const startDate = new Date(competition.startDate).getTime();
+
+            if (now > endDate) {
+
+                clearInterval(tmr);
+
+            } else if (endDate - now < 3600000) {
+
+                const job = schedule.scheduleJob(endDate, async function () {
+                    let winners1 = [];
+                    let winners2 = [];
+                    let winners3 = [];
+
+                    // give reward
+
+                    if (competition.mode === 1 || competition.mode === 5) {
+                        console.log('-------------testing--------------', competition.mode)
+                        const [winners, metadata] = await db.sequelize.query(`
                     SELECT *,
                     (
                         SELECT 1+ count(*)
@@ -72,120 +87,120 @@ exports.registerCompetition = async (req, res) => {
                     ORDER BY uc.record${competition.mode} DESC
                 `);
 
-                winners1 = winners.filter(x => x.rank === 1);
-                winners2 = winners.filter(x => x.rank === 2);
-                winners3 = winners.filter(x => x.rank === 3);
-                console.log('winners: ', winners)
-                console.log('first: ', winners1)
-                console.log('second: ', winners2)
-                console.log('third: ', winners3)
+                        winners1 = winners.filter(x => x.rank === 1);
+                        winners2 = winners.filter(x => x.rank === 2);
+                        winners3 = winners.filter(x => x.rank === 3);
+                        console.log('winners: ', winners)
+                        console.log('first: ', winners1)
+                        console.log('second: ', winners2)
+                        console.log('third: ', winners3)
 
-                if (winners1.length === 1 && winners2.length === 1) {
-                    await giveReward(winners1[0].userId, competition.reward1);
-                    await giveReward(winners2[0].userId, competition.reward2);
-                    if (winners3.length > 0) {
-                        for (const winner3 of winners3) {
-                            await giveReward(winner3.userId, Math.floor(competition.reward3 / winners3.length));
+                        if (winners1.length === 1 && winners2.length === 1) {
+                            await giveReward(winners1[0].userId, competition.reward1);
+                            await giveReward(winners2[0].userId, competition.reward2);
+                            if (winners3.length > 0) {
+                                for (const winner3 of winners3) {
+                                    await giveReward(winner3.userId, Math.floor(competition.reward3 / winners3.length));
+                                }
+                            }
+                        } else if (winners1.length === 1 && winners2.length > 1) {
+                            await giveReward(winners1[0].userId, competition.reward1);
+                            for (const winner2 of winners2) {
+                                await giveReward(winner2.userId, Math.floor((competition.reward2 + competition.reward3) / winners2.length));
+                            }
+                        } else if (winners1.length === 2) {
+                            await giveReward(winners1[0].userId, Math.floor((competition.reward1 + competition.reward2) / 2));
+                            if (winners3.length > 0) {
+                                for (const winner3 of winners3) {
+                                    await giveReward(winner3.userId, Math.floor(competition.reward3 / winners3.length));
+                                }
+                            }
+                        } else if (winners1.length > 2) {
+                            for (const winner1 of winners1) {
+                                await giveReward(winner1.userId, Math.floor(competition.totalReward / winners1.length));
+                            }
+                        }
+                    } else {
+                        let filter = {};
+                        if (competition.mode === 2) {
+                            filter = {
+                                record2: {
+                                    [Op.gte]: competition.questFishWidth
+                                }
+                            }
+                        } else if (competition.mode === 3) {
+                            filter = {
+                                record3: {
+                                    [Op.gte]: competition.questFishNumber
+                                }
+                            }
+                        } else if (competition.mode === 4) {
+                            filter = {
+                                record4: {
+                                    [Op.gte]: competition.questFishWidth
+                                }
+                            }
+                        }
+                        winners1 = await UserCompetition.findAll({
+                            where: filter
+                        });
+
+                        for (const winner1 of winners1) {
+                            await giveReward(winner1.userId, Math.floor(competition.totalReward / winners1.length));
                         }
                     }
-                } else if (winners1.length === 1 && winners2.length > 1) {
-                    await giveReward(winners1[0].userId, competition.reward1);
-                    for (const winner2 of winners2) {
-                        await giveReward(winner2.userId, Math.floor((competition.reward2 + competition.reward3) / winners2.length));
-                    }
-                } else if (winners1.length === 2) {
-                    await giveReward(winners1[0].userId, Math.floor((competition.reward1 + competition.reward2) / 2));
-                    if (winners3.length > 0) {
-                        for (const winner3 of winners3) {
-                            await giveReward(winner3.userId, Math.floor(competition.reward3 / winners3.length));
+
+                    // update style of winners
+
+                    for (const winner of winners1) {
+                        const record = await getRecordByUser(winner.userId);
+                        const championShipCount = record.rankChampionshipCount + record.questChampionshipCount;
+                        const profile = await Profile.findOne({
+                            where: {userId: winner.userId}
+                        });
+                        if (championShipCount >= 10) {
+                            profile.userStyleId = 8;
+                        } else if (championShipCount >= 5) {
+                            profile.userStyleId = 7;
+                        } else if (championShipCount >= 1) {
+                            profile.userStyleId = 6;
                         }
+                        await profile.save();
                     }
-                } else if (winners1.length > 2) {
-                    for (const winner1 of winners1) {
-                        await giveReward(winner1.userId, Math.floor(competition.totalReward / winners1.length));
-                    }
-                }
-            } else {
-                let filter = {};
-                if (competition.mode === 2) {
-                    filter = {
-                        record2: {
-                            [Op.gte]: competition.questFishWidth
-                        }
-                    }
-                } else if (competition.mode === 3) {
-                    filter = {
-                        record3: {
-                            [Op.gte]: competition.questFishNumber
-                        }
-                    }
-                } else if (competition.mode === 4) {
-                    filter = {
-                        record4: {
-                            [Op.gte]: competition.questFishWidth
-                        }
-                    }
-                }
-                winners1 = await UserCompetition.findAll({
-                    where: filter
+                })
+
+            } else if (endDate - now < 24 * 3600000) {
+
+                const userCompetition = await UserCompetition.findAll({
+                    where: {competitionId: competition.id}
                 });
 
-                for (const winner1 of winners1) {
-                    await giveReward(winner1.userId, Math.floor(competition.totalReward / winners1.length));
+                const userIds = [];
+                for (const item of userCompetition) {
+                    userIds.push(item.userId);
                 }
-            }
 
-            // update style of winners
+                const registeredTokens = await getSubTokens(userIds);
+                await sendNotification([registeredTokens], {message: '곧 대회가 종료되요!', competitionId: competition.id});
 
-            for (const winner of winners1) {
-                const record = await getRecordByUser(winner.userId);
-                const championShipCount = record.rankChampionshipCount + record.questChampionshipCount;
-                const profile = await Profile.findOne({
-                    where: {userId: winner.userId}
+            } else if (startDate - now < 24 * 3600000) {
+
+                const userCompetition = await UserCompetition.findAll({
+                    where: {competitionId: competition.id}
                 });
-                if (championShipCount >= 10) {
-                    profile.userStyleId = 8;
-                } else if (championShipCount >= 5) {
-                    profile.userStyleId = 7;
-                } else if (championShipCount >= 1) {
-                    profile.userStyleId = 6;
+
+                const userIds = [];
+                for (const item of userCompetition) {
+                    userIds.push(item.userId);
                 }
-                await profile.save();
-            }
-        })
 
-        // push notification
-        const startNoticeDate = new Date(competition.startDate).getTime() - 24 * 3600000;
-        const job1 = schedule.scheduleJob(new Date(startNoticeDate), async function () {
-            const userCompetition = await UserCompetition.findAll({
-                where: {competitionId: competition.id}
-            });
-
-            const userIds = [];
-            for (const item of userCompetition) {
-                userIds.push(item.userId);
+                const registeredTokens = await getSubTokens(userIds);
+                await sendNotification([registeredTokens], {message: '곧 대회가 시작되요!', competitionId: competition.id});
             }
 
-            const registeredTokens = await getSubTokens(userIds);
-            await sendNotification([registeredTokens], {message: '곧 대회가 시작되요!', competitionId: competition.id});
-        });
+        }, 3600000)
 
-        const endNoticeDate = new Date(competition.endDate).getTime() - 24 * 3600000;
-        const job2 = schedule.scheduleJob(new Date(endNoticeDate), async function () {
-            const userCompetition = await UserCompetition.findAll({
-                where: {competitionId: competition.id}
-            });
-
-            const userIds = [];
-            for (const item of userCompetition) {
-                userIds.push(item.userId);
-            }
-
-            const registeredTokens = await getSubTokens(userIds);
-            await sendNotification([registeredTokens], {message: '곧 대회가 종료되요!', competitionId: competition.id});
-        });
-
-        return res.status(200).send({result: 'COMPETITION.REGISTER', data: competition.id});
+        return res.status(200).send({result: 'COMPETITION.REGISTER', data: contest.id});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }

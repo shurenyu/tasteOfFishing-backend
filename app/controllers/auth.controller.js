@@ -6,6 +6,7 @@ const Competition = db.competition;
 const UserCompetition = db.userCompetition;
 const Fish = db.fish;
 const FishType = db.fishType;
+const UserStyle = db.userStyle;
 const EmailVerification = db.emailVerification;
 const EmailCertification = db.emailCertification;
 const PhoneCertification = db.phoneVerification;
@@ -211,6 +212,8 @@ exports.appLogin = async (req, res) => {
                 model: Profile,
                 include: [{
                     model: FishType
+                }, {
+                    model: UserStyle
                 }]
             }]
         });

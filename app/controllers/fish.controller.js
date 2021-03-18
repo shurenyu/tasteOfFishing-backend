@@ -818,6 +818,7 @@ exports.getRankingRealtime = async (req, res) => {
     const max = db.Sequelize.fn('max', db.Sequelize.col('fishWidth'));
     // const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY max DESC))');
 
+    console.log(filter)
     try {
         const fishes = await Fish.findAll({
             limit: req.body.limit || 1000000,
@@ -831,33 +832,37 @@ exports.getRankingRealtime = async (req, res) => {
                 attributes: ['id', 'name'],
             }],
         });
+
         const temp = [];
         let myFish = {};
         let myRanking = 0;
         for (const [idx, item] of fishes.entries()) {
-            const image = await Fish.findOne({
-                where: {fishWidth: item.dataValues.max},
-                attributes: ['id'],
-                include: [{
-                    limit: 1,
-                    model: FishImage,
-                    attributes: ['image']
-                }, {
-                    model: FishType,
-                    attributes: ['name']
-                }]
-            });
-            const newItem = {
-                ...item.dataValues,
-                fishId: image.dataValues.id,
-                image: image.dataValues.fishImages[0] && image.dataValues.fishImages[0].dataValues.image,
-                type: image.dataValues.fishType.dataValues.name
-            }
-            temp.push(newItem);
+            if (item.user) {
+                const image = await Fish.findOne({
+                    where: {fishWidth: item.dataValues.max},
+                    attributes: ['id'],
+                    include: [{
+                        limit: 1,
+                        model: FishImage,
+                        attributes: ['image']
+                    }, {
+                        model: FishType,
+                        attributes: ['name']
+                    }]
+                });
+                console.log(image.fishImages[0])
+                const newItem = {
+                    ...item.dataValues,
+                    fishId: image.id,
+                    image: image.fishImages[0] && image.fishImages[0].dataValues.image,
+                    type: image.fishType && image.fishType.dataValues.name
+                }
+                temp.push(newItem);
 
-            if (item.user.id === req.body.userId) {
-                myRanking = idx + 1;
-                myFish = newItem;
+                if (item.user.id === req.body.userId) {
+                    myRanking = idx + 1;
+                    myFish = newItem;
+                }
             }
         }
 
