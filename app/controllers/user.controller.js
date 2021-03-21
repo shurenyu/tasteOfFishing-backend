@@ -15,17 +15,27 @@ const {updatePoint} = require("./withdrawal.controller");
  * @param res
  * @returns {token}
  */
-exports.registerProfile = (req, res) => {
-    const newProfile = {
-        ...req.body
-    };
-    Profile.create(newProfile)
-        .then(data => {
-            return res.status(200).send({result: 'USER.PROFILE_REGISTER_SUCCESS', data: data.id});
-        })
-        .catch(err => {
-            return res.status(500).send({msg: err.toString()});
+exports.registerProfile = async (req, res) => {
+    try {
+        const user = await User.findOne({
+            where: {id: req.body.userId}
         });
+        user.name = req.body.name || user.name;
+        await user.save();
+
+        const profile = await Profile.create({
+            userId: req.body.userId,
+            username: req.body.name,
+            introMe: req.body.introMe,
+            avatar: req.body.avatar,
+            serviceAlarm: req.body.serviceAlarm,
+            adAlarm: req.body.adAlarm,
+            createdDate: new Date(),
+        });
+        return res.status(200).send({result: 'USER.PROFILE_REGISTER_SUCCESS', data: profile.id});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
 };
 
 
