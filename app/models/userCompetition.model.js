@@ -26,6 +26,9 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DOUBLE,
             defaultValue: 100000,
         },
+        image: {
+            type: Sequelize.STRING(255)
+        },
         createdDate: {
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW

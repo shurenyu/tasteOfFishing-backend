@@ -15,7 +15,7 @@ const Report = db.report;
 const Op = db.Sequelize.Op;
 const {getSubTokens, sendNotification} = require("../utils/push-notification");
 
-const updateRecordAndSendMessage = async (fish) => {
+const updateRecordAndSendMessage = async (fish, images) => {
     /* update the record of userCompetition */
 
     try {
@@ -77,10 +77,23 @@ const updateRecordAndSendMessage = async (fish) => {
                 });
                 const oldWinners = temp.map(x => x.userId);
 
-                userCompetition.record2 = await Fish.max('fishWidth', {
-                    where: filter
-                });
-                await userCompetition.save();
+                // const maxFish = await Fish.findAll({
+                //     limit: 1,
+                //     order: [['fishWidth', 'DESC']],
+                //     where: filter,
+                //     include: [{
+                //         model: FishImage
+                //     }]
+                // });
+                //
+                // userCompetition.record2 = maxFish[0] && maxFish[0].fishWidth;
+                // userCompetition.image = maxFish[0] && maxFish[0].fishImages[1];
+
+                if (fish.fishWidth > userCompetition.record2) {
+                    userCompetition.record2 = fish.fishWidth;
+                    userCompetition.image = images[1];
+                    await userCompetition.save();
+                }
 
                 temp = await UserCompetition.findAll({
                     limit: 3,
@@ -155,6 +168,7 @@ const updateRecordAndSendMessage = async (fish) => {
 
                 if (Math.abs(userCompetition.record5) > Math.abs(fish.fishWidth - competition.questSpecialWidth)) {
                     userCompetition.record5 = fish.fishWidth - competition.questSpecialWidth;
+                    userCompetition.image = images[1];
                     await userCompetition.save();
                 }
 
@@ -196,8 +210,11 @@ const updateRecordAndSendMessage = async (fish) => {
 
 exports.commitFish = async (req, res) => {
     const newFish = {
-        ...req.body,
-        status: 1, // registered
+        userId: req.body.userId,
+        competitionId: req.body.competitionId,
+        fishWidth: req.body.fishWidth,
+        fishTypeId: req.body.fishType,
+        status: 1,
         registerDate: new Date(),
     };
 
@@ -215,8 +232,14 @@ exports.commitFish = async (req, res) => {
     if (competition) {
         try {
             const fish = await Fish.create(newFish);
+            const data = req.body.fishImages.map(x => ({
+                fishId: fish.id,
+                image: x,
+            }));
+            await FishImage.bulkCreate(data, {returning: true});
+
             res.status(200).send({result: 'DIARY_FISH_COMMIT_SUCCESS', data: {id: fish.id, registerDate: fish.registerDate}});
-            await updateRecordAndSendMessage(fish);
+            await updateRecordAndSendMessage(fish, req.body.fishImages);
         } catch (err) {
             return res.status(500).send({msg: err.toString()});
         }

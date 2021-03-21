@@ -273,7 +273,7 @@ exports.getCompetitionById = async (req, res) => {
             winners = await UserCompetition.findAll({
                 limit: 3,
                 order: [[`record${competition.mode}`, sortingKey[competition.mode - 1]]],
-                attributes: ['id', `record${competition.mode}`],
+                attributes: ['id', `record${competition.mode}`, 'image'],
                 where: {
                     competitionId: competitionId,
                 },
@@ -378,7 +378,11 @@ exports.getProgressingCompetitions = (req, res) => {
             endDate: {
                 [Op.gte]: now.getTime()
             }
-        }
+        },
+        include: [{
+            model: FishType,
+            attributes: ['id', 'name']
+        }]
     }).then(data => {
         return res.status(200).send({result: data});
     }).catch(err => {
