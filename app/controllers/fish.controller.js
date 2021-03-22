@@ -866,7 +866,6 @@ exports.getRankingRealtime = async (req, res) => {
                     where: {fishWidth: item.dataValues.max},
                     attributes: ['id'],
                     include: [{
-                        limit: 1,
                         model: FishImage,
                         attributes: ['image']
                     }, {
@@ -874,11 +873,11 @@ exports.getRankingRealtime = async (req, res) => {
                         attributes: ['name']
                     }]
                 });
-                console.log(image.fishImages[0])
+                console.log('image: ', image.fishImages && image.fishImages.length)
                 const newItem = {
                     ...item.dataValues,
                     fishId: image.id,
-                    image: image.fishImages[0] && image.fishImages[0].dataValues.image,
+                    image: image.fishImages[1] && image.fishImages[1].dataValues.image,
                     type: image.fishType && image.fishType.dataValues.name
                 }
                 temp.push(newItem);
