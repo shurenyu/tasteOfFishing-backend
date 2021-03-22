@@ -213,7 +213,7 @@ exports.commitFish = async (req, res) => {
         userId: req.body.userId,
         competitionId: req.body.competitionId,
         fishWidth: req.body.fishWidth,
-        fishTypeId: req.body.fishType,
+        fishTypeId: req.body.fishTypeId,
         status: 1,
         registerDate: new Date(),
     };
