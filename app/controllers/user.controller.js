@@ -3,6 +3,7 @@ const User = db.user;
 const Profile = db.profile;
 // const Diary = db.diary;
 const UserStyle = db.userStyle;
+const FishType = db.fishType;
 const UserCompetition = db.userCompetition;
 const Competition = db.competition;
 const UserPoint = db.userPoint;
@@ -30,9 +31,31 @@ exports.registerProfile = async (req, res) => {
             avatar: req.body.avatar,
             serviceAlarm: req.body.serviceAlarm,
             adAlarm: req.body.adAlarm,
+            pointAmount: 30,
             createdDate: new Date(),
         });
-        return res.status(200).send({result: 'USER.PROFILE_REGISTER_SUCCESS', data: profile.id});
+
+        const userInfo = await User.findOne({
+            where: {id: req.body.userId},
+            attributes: {
+                exclude: ['password'],
+            },
+            include: [{
+                model: Profile,
+                include: [{
+                    model: FishType
+                }, {
+                    model: UserStyle
+                }]
+            }]
+        });
+
+        let dailyCheck = true;
+        return res.status(200).send({
+            result: 'USER.PROFILE_REGISTER_SUCCESS',
+            userInfo: userInfo,
+            data: profile.id, dailyCheck,
+        });
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }

@@ -173,16 +173,17 @@ exports.updatePoint = async (userId, amount, action, content) => {
             where: {userId: userId}
         });
 
-        profile.pointAmount = action === 1 ? profile.pointAmount + amount : profile.pointAmount - amount;
-        await profile.save();
+        if (profile) {
+            profile.pointAmount = action === 1 ? profile.pointAmount + amount : profile.pointAmount - amount;
+            await profile.save();
 
-        await UserPoint.create({
-            userId: userId,
-            content: content,
-            point: action === 1 ? amount : -amount,
-            createdDate: new Date(),
-        });
-
+            await UserPoint.create({
+                userId: userId,
+                content: content,
+                point: action === 1 ? amount : -amount,
+                createdDate: new Date(),
+            });
+        }
         return 'success';
     } catch (err) {
         return err.toString();
