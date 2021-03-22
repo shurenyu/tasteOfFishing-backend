@@ -652,6 +652,9 @@ exports.getFishById = (req, res) => {
                     }]
                 }]
             }]
+        }, {
+            model: FishType,
+            attributes: ['id', 'name']
         }]
     }).then((data) => {
         return res.status(200).send({result: data});
