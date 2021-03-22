@@ -19,12 +19,14 @@ exports.registerPost = async (req, res) => {
             createdDate: new Date(),
         });
 
-        const images = req.body.images.map(x => ({
-            postId: data.id,
-            image: x,
-        }));
+        if (req.body.images && req.body.images.length > 0) {
+            const images = req.body.images.map(x => ({
+                postId: data.id,
+                image: x,
+            }));
 
-        await PostImage.bulkCreate(images, {returning: true});
+            await PostImage.bulkCreate(images, {returning: true});
+        }
 
         const profile = await Profile.findOne({
             where: {userId: req.body.userId}
@@ -67,13 +69,26 @@ exports.getPostByUser = async (req, res) => {
             order: [['createdDate', 'DESC']],
             where: {userId: userId},
             include: [{
-                model: PostImage
+                model: User,
+                attributes: ['id', 'name', 'type'],
+                include: [{
+                    model: Profile,
+                    attributes: ['id', 'avatar']
+                }]
+            }, {
+                model: PostImage,
             }, {
                 model: PostComment,
-                attributes: ['id'],
+                include: [{
+                    model: User,
+                    attributes: ['id', 'name', 'type'],
+                    include: [{
+                        model: Profile,
+                        attributes: ['id', 'avatar']
+                    }]
+                }]
             }]
         })
-        console.log(data.data)
 
         return res.status(200).send({result: data, totalCount: count});
     } catch (err) {
