@@ -166,7 +166,7 @@ exports.searchPosts = async (req, res) => {
             INNER JOIN users ON users.id = posts.userId
             INNER JOIN profiles ON users.id = profiles.userId
             LEFT JOIN postImages ON postImages.postId = posts.id
-            WHERE users.name LIKE '%${keyword}%' OR 'content' LIKE '%${keyword}%' OR profiles.username LIKE '%${keyword}%'
+            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username LIKE '%${keyword}%'
             ORDER BY createdDate DESC
             LIMIT ${req.body.limit || 1000000}
             OFFSET ${req.body.offset || 0}
@@ -182,6 +182,8 @@ exports.searchPosts = async (req, res) => {
         `)
 
         let result = [];
+
+        console.log('postLength: ', posts.length)
         for (const x of posts) {
             const idx = result.findIndex(y => y.id === x.id);
             if (idx === -1) {
