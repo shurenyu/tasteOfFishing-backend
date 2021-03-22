@@ -172,6 +172,9 @@ exports.getMyInfo = async (req, res) => {
             attributes: ['id', 'name', 'email'],
             include: [{
                 model: Profile,
+                include: [{
+                    model: UserStyle,
+                }]
             }]
         });
 

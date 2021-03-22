@@ -205,31 +205,18 @@ exports.appLogin = async (req, res) => {
     try {
         const user = await User.findOne({
             where: {email: req.body.email.toLowerCase()},
-            attributes: {
-                exclude: ['password'],
-            },
-            include: [{
-                model: Profile,
-                include: [{
-                    model: FishType
-                }, {
-                    model: UserStyle
-                }]
-            }]
         });
 
         const userRecord = await getUserRecord(user.id);
 
-        const generalInfo = await User.findOne({where: {email: req.body.email.toLowerCase()}});
-
-        if (generalInfo) {
-            bcrypt.compare(req.body.password, generalInfo.password).then(async isMatch => {
+        if (user) {
+            bcrypt.compare(req.body.password, user.password).then(async isMatch => {
                 if (isMatch) {
                     let dailyCheck = false;
-                    const oldUpdated = generalInfo.updatedDate;
-                    generalInfo.updatedDate = new Date();
-                    await generalInfo.save();
-                    const token = await generateToken(generalInfo);
+                    const oldUpdated = user.updatedDate;
+                    user.updatedDate = new Date();
+                    await user.save();
+                    const token = await generateToken(user);
 
                     // if first login in the day
                     if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
@@ -253,13 +240,28 @@ exports.appLogin = async (req, res) => {
                     //     }
                     // });
 
-                    res.status(200).json({accessToken: token, userInfo: user, userRecord: userRecord, dailyCheck});
+                    const userInfo = await User.findOne({
+                        where: {email: req.body.email.toLowerCase()},
+                        attributes: {
+                            exclude: ['password'],
+                        },
+                        include: [{
+                            model: Profile,
+                            include: [{
+                                model: FishType
+                            }, {
+                                model: UserStyle
+                            }]
+                        }]
+                    });
+
+                    res.status(200).json({accessToken: token, userInfo: userInfo, userRecord: userRecord, dailyCheck});
 
                     // push notification after 7 days
                     const after7days = new Date().getTime() + 7 * 24 * 3600000;
 
                     const job2 = schedule.scheduleJob(new Date(after7days), async function () {
-                        const registeredToken = await getSubTokens(generalInfo.id);
+                        const registeredToken = await getSubTokens(user.id);
                         return sendNotification([registeredToken], {message: '낚시의맛을 이용하신지 1주일이 넘었어요!', home: 1});
                     });
                 } else {
