@@ -172,7 +172,25 @@ exports.register = async (req, res) => {
                         // await sendCode(user, res);
                         const device = req.body.device || '';
                         const token = await generateToken(user);
-                        return res.status(200).json({accessToken: token, userInfo: user});
+                        await updatePoint(user.id, 30, 1, '출석보상');
+                        let dailyCheck = true;
+
+                        const userInfo = await User.findOne({
+                            where: {email: req.body.email.toLowerCase()},
+                            attributes: {
+                                exclude: ['password'],
+                            },
+                            include: [{
+                                model: Profile,
+                                include: [{
+                                    model: FishType
+                                }, {
+                                    model: UserStyle
+                                }]
+                            }]
+                        });
+
+                        return res.status(200).json({accessToken: token, userInfo: userInfo, dailyCheck: dailyCheck});
                     })
                     .catch(err => {
                         return res.status(500).json({msg: err.toString()});
