@@ -755,6 +755,22 @@ exports.updateFish = async (req, res) => {
         }
 
         await fish.save();
+
+        if (req.body.fishImages) {
+            const imageList = JSON.parse(JSON.stringify(req.body.fishImages));
+            const images = imageList.map(x => ({
+                fishId: fish.id,
+                image: x,
+            }));
+
+            await FishImage.destroy({
+                where: {fishId: fish.id}
+            });
+
+            await FishImage.bulkCreate(images, {returning: true});
+        }
+
+
         res.status(200).send({result: 'FISH_UPDATE_SUCCESS'});
 
         await updateRecordAndSendMessage(fish);
@@ -840,31 +856,53 @@ exports.deleteFishAndUpdateReport = async (req, res) => {
 // }
 
 exports.getRankingRealtime = async (req, res) => {
+    const limit = req.body.limit || 100000;
+    const offset = req.body.offset || 0;
+
     let filter = {status: 1};
     if (req.body.fishTypeId !== 0) filter.fishTypeId = req.body.fishTypeId;
     const max = db.Sequelize.fn('max', db.Sequelize.col('fishWidth'));
     // const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY max DESC))');
 
-    console.log(filter)
     try {
         const fishes = await Fish.findAll({
-            limit: req.body.limit || 1000000,
-            offset: req.body.offset || 0,
+            // limit: req.body.limit || 1000000,
+            // offset: req.body.offset || 0,
             where: filter,
             order: [[max, 'DESC']],
             attributes: [[max, 'max']],
             group: ['userId'],
             include: [{
                 model: User,
-                attributes: ['id', 'name'],
-            }],
+                attributes: ['id', 'name']
+            }]
         });
 
         const temp = [];
         let myFish = {};
         let myRanking = 0;
+
+        let count = 0;
+
         for (const [idx, item] of fishes.entries()) {
             if (item.user) {
+                count ++;
+
+                if (count < offset + 1) continue;
+                if (count > offset + limit + 1) break;
+
+                const userInfo = await User.findOne({
+                    where: {id: item.user.id},
+                    attributes: ['id'],
+                    include: [{
+                        model: Profile,
+                        attributes: ['id'],
+                        include: [{
+                            model: UserStyle,
+                        }]
+                    }]
+                });
+
                 const image = await Fish.findOne({
                     where: {fishWidth: item.dataValues.max},
                     attributes: ['id'],
@@ -876,12 +914,12 @@ exports.getRankingRealtime = async (req, res) => {
                         attributes: ['name']
                     }]
                 });
-                console.log('image: ', image.fishImages && image.fishImages.length)
                 const newItem = {
                     ...item.dataValues,
                     fishId: image.id,
-                    image: image.fishImages[1] && image.fishImages[1].dataValues.image,
-                    type: image.fishType && image.fishType.dataValues.name
+                    fishImage: image.fishImages[1] && image.fishImages[1].dataValues.image,
+                    fishType: image.fishType && image.fishType.dataValues.name,
+                    userStyle: userInfo && userInfo.profile && userInfo.profile.userStyle && userInfo.profile.userStyle.name,
                 }
                 temp.push(newItem);
 
