@@ -137,7 +137,7 @@ exports.registerCompetition = async (req, res) => {
                         } else if (competition.mode === 4) {
                             filter = {
                                 record4: {
-                                    [Op.gte]: competition.questFishWidth
+                                    [Op.gte]: competition.questFishNumber
                                 }
                             }
                         }
