@@ -511,6 +511,7 @@ exports.getFishesByUser = (req, res) => {
     Fish.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
+        order: [['fishWidth', 'DESC']],
         where: filter,
         include: [{
             model: FishType,
