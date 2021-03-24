@@ -54,7 +54,8 @@ exports.registerProfile = async (req, res) => {
         return res.status(200).send({
             result: 'USER.PROFILE_REGISTER_SUCCESS',
             userInfo: userInfo,
-            data: profile.id, dailyCheck,
+            data: profile.id,
+            dailyCheck,
         });
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
@@ -72,14 +73,6 @@ exports.updateProfile = async (req, res) => {
         //     return res.status(404).send({msg: 'USER.PROFILE_NOT_FOUND'});
         // }
 
-        const user = await User.findOne({
-            where: {id: userId}
-        });
-        
-        user.name = req.body.name || user.name;
-
-        await user.save();
-
         const profile = await Profile.findOne({
             where: {userId: userId}
         });
@@ -89,7 +82,6 @@ exports.updateProfile = async (req, res) => {
         }
 
         const keys = Object.keys(req.body);
-        console.log(keys)
         for (const key of keys) {
             if (key !== 'profileId' && key !== 'userId') {
                 profile[key] = req.body[key];
@@ -97,7 +89,31 @@ exports.updateProfile = async (req, res) => {
         }
         await profile.save();
 
-        return res.status(200).send({result: 'USER.PROFILE_UPDATE_SUCCESS'});
+        const user = await User.findOne({
+            where: {id: userId},
+            attributes: {
+                exclude: ['password'],
+            },
+            include: [{
+                model: Profile,
+                include: [{
+                    model: FishType
+                }, {
+                    model: UserStyle
+                }]
+            }]
+        });
+
+        user.name = req.body.name || user.name;
+
+        await user.save();
+
+        return res.status(200).send({
+            result: 'USER.PROFILE_UPDATE_SUCCESS',
+            userInfo: user,
+            data: profile.id,
+        });
+
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }

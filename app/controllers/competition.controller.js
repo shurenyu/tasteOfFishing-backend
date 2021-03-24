@@ -10,6 +10,7 @@ const UserStyle = db.userStyle;
 const Op = db.Sequelize.Op;
 const {getSubTokens, sendNotification} = require("../utils/push-notification");
 const {updatePoint} = require("./withdrawal.controller");
+const CHECK_INTERVAL = 60000;
 
 const validCompetition = (start, end) => {
     const startDate = new Date(start).getTime();
@@ -61,10 +62,11 @@ exports.registerCompetition = async (req, res) => {
             const startDate = new Date(competition.startDate).getTime();
 
             if (now > endDate) {
-
+                console.log('the competiton finished!!!!!!!!')
                 clearInterval(tmr);
 
-            } else if (endDate - now < 3600000) {
+            } else if (endDate - now < CHECK_INTERVAL) {
+                console.log('competition will be finished within 1 min !!!');
 
                 const job = schedule.scheduleJob(endDate, async function () {
                     let winners1 = [];
@@ -121,21 +123,25 @@ exports.registerCompetition = async (req, res) => {
                             }
                         }
                     } else {
-                        let filter = {};
+                        let filter = {competitionId: competition.id};
+
                         if (competition.mode === 2) {
                             filter = {
+                                competitionId: competition.id,
                                 record2: {
                                     [Op.gte]: competition.questFishWidth
                                 }
                             }
                         } else if (competition.mode === 3) {
                             filter = {
+                                competitionId: competition.id,
                                 record3: {
                                     [Op.gte]: competition.questFishNumber
                                 }
                             }
                         } else if (competition.mode === 4) {
                             filter = {
+                                competitionId: competition.id,
                                 record4: {
                                     [Op.gte]: competition.questFishNumber
                                 }
@@ -198,7 +204,7 @@ exports.registerCompetition = async (req, res) => {
                 await sendNotification([registeredTokens], {message: '곧 대회가 시작되요!', competitionId: competition.id});
             }
 
-        }, 3600000)
+        }, CHECK_INTERVAL)
 
         return res.status(200).send({result: 'COMPETITION.REGISTER', data: contest.id});
     } catch (err) {
