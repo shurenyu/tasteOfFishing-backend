@@ -72,6 +72,14 @@ exports.updateProfile = async (req, res) => {
         //     return res.status(404).send({msg: 'USER.PROFILE_NOT_FOUND'});
         // }
 
+        const user = await User.findOne({
+            where: {id: userId}
+        });
+        
+        user.name = req.body.name || user.name;
+
+        await user.save();
+
         const profile = await Profile.findOne({
             where: {userId: userId}
         });
