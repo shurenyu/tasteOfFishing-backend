@@ -212,7 +212,7 @@ exports.commitFish = async (req, res) => {
     const newFish = {
         userId: req.body.userId,
         competitionId: req.body.competitionId,
-        fishWidth: req.body.fishWidth,
+        fishWidth: req.body.fishWidth.toFixed(2),
         fishTypeId: req.body.fishTypeId,
         status: 1,
         registerDate: new Date(),
@@ -858,83 +858,66 @@ exports.deleteFishAndUpdateReport = async (req, res) => {
 exports.getRankingRealtime = async (req, res) => {
     const limit = req.body.limit || 100000;
     const offset = req.body.offset || 0;
-
-    let filter = {status: 1};
-    if (req.body.fishTypeId !== 0) filter.fishTypeId = req.body.fishTypeId;
-    const max = db.Sequelize.fn('max', db.Sequelize.col('fishWidth'));
-    // const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY max DESC))');
+    const fishTypeId = req.body.fishTypeId;
+    const userId = req.body.userId;
 
     try {
-        const fishes = await Fish.findAll({
-            // limit: req.body.limit || 1000000,
-            // offset: req.body.offset || 0,
-            where: filter,
-            order: [[max, 'DESC']],
-            attributes: [[max, 'max']],
-            group: ['userId'],
-            include: [{
-                model: User,
-                attributes: ['id', 'name']
-            }]
-        });
+        const [ranking, metadata] = await db.sequelize.query(`
+        SELECT
+            x.*,
+            u.name AS userName,
+            ust.name AS userStyle,
+            fi.image,
+            p.avatar
+        FROM
+            (
+            SELECT
+                o.id,
+                o.fishWidth,
+                o.fishTypeId,
+                o.userId
+            FROM
+                fishes o
+            LEFT JOIN fishes b ON o.userId = b.userId
+            AND o.fishWidth < b.fishWidth
+            WHERE b.fishWidth IS NULL
+            ) x
+        JOIN users u ON u.id = x.userId
+        JOIN profiles p ON p.userId = u.id
+        JOIN userStyles ust ON ust.id = p.userStyleId
+        JOIN fishImages fi ON fi.fishId = x.id
+        WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'}
+        ORDER BY x.fishWidth DESC
+    `);
 
-        const temp = [];
         let myFish = {};
         let myRanking = 0;
+        let frontItem = {};
+        let winners = [];
 
         let count = 0;
 
-        for (const [idx, item] of fishes.entries()) {
-            if (item.user) {
+        for (const item of ranking) {
+
+            if (item.id !== frontItem.id) {
+                winners.push(item);
                 count ++;
-
-                if (count < offset + 1) continue;
-                if (count > offset + limit + 1) break;
-
-                const userInfo = await User.findOne({
-                    where: {id: item.user.id},
-                    attributes: ['id'],
-                    include: [{
-                        model: Profile,
-                        attributes: ['id'],
-                        include: [{
-                            model: UserStyle,
-                        }]
-                    }]
-                });
-
-                const image = await Fish.findOne({
-                    where: {fishWidth: item.dataValues.max},
-                    attributes: ['id'],
-                    include: [{
-                        model: FishImage,
-                        attributes: ['image']
-                    }, {
-                        model: FishType,
-                        attributes: ['name']
-                    }]
-                });
-                const newItem = {
-                    ...item.dataValues,
-                    fishId: image.id,
-                    fishImage: image.fishImages[1] && image.fishImages[1].dataValues.image,
-                    fishType: image.fishType && image.fishType.dataValues.name,
-                    userStyle: userInfo && userInfo.profile && userInfo.profile.userStyle && userInfo.profile.userStyle.name,
-                }
-                temp.push(newItem);
-
-                if (item.user.id === req.body.userId) {
-                    myRanking = idx + 1;
-                    myFish = newItem;
-                }
             }
+
+            if (item.userId === userId) {
+                myFish = {...item};
+                myRanking = count;
+            }
+
+            frontItem = {...item};
         }
 
-        return res.status(200).send({result: temp, myFish: myFish, myRanking: myRanking});
-        // return res.status(200).send({result: fishes, myFish: myFish, myRanking: myRanking});
+        return res.status(200).send({result: winners, myFish: myFish, myRanking: myRanking});
+
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }
+
 }
 
 exports.addFishComment = (req, res) => {
