@@ -83,6 +83,7 @@ db.report.hasOne(db.fish, {sourceKey: 'fishId', foreignKey: 'id'});
 db.report.hasOne(db.post, {sourceKey: 'postId', foreignKey: 'id'});
 db.userRecord.hasOne(db.fish, {sourceKey: 'fishId', foreignKey: 'id'});
 db.profile.hasOne(db.userStyle, {sourceKey: 'userStyleId', foreignKey: 'id'});
-// db.userRecord.hasOne(db.fishType, {sourceKey: 'fishTypeId', foreignKey: 'id'});
+db.profile.hasOne(db.fishType, {sourceKey: 'mainFishType', foreignKey: 'id'});
+
 
 module.exports = db;
