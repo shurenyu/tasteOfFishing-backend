@@ -263,7 +263,7 @@ exports.appLogin = async (req, res) => {
 
                     const job2 = schedule.scheduleJob(new Date(after7days), async function () {
                         const registeredToken = await getSubTokens(user.id);
-                        return sendNotification([registeredToken], {message: '낚시의맛을 이용하신지 1주일이 넘었어요!', data: 1});
+                        return sendNotification([registeredToken], {message: '낚시의맛을 이용하신지 1주일이 넘었어요!', data: {home: 1}});
                     });
                 } else {
                     res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});

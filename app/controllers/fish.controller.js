@@ -198,7 +198,7 @@ const updateRecordAndSendMessage = async (fish, images) => {
             const registeredTokens = await getSubTokens(userIds);
             await sendNotification(registeredTokens, {
                 message: '참여중인 대회의 랭킹에 변동이 생겼어요!',
-                data: competition.id
+                data: {competitionId: competition.id}
             });
         }
 
@@ -463,7 +463,7 @@ exports.registerCheckedFish = async (req, res) => {
             const registeredTokens = await getSubTokens(userIds);
             await sendNotification(registeredTokens, {
                 message: '참여중인 대회의 랭킹에 변동이 생겼어요!',
-                data: competition.id
+                data: {competitionId: competition.id}
             });
         }
 

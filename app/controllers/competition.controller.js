@@ -187,7 +187,7 @@ exports.registerCompetition = async (req, res) => {
                 }
 
                 const registeredTokens = await getSubTokens(userIds);
-                await sendNotification([registeredTokens], {message: '곧 대회가 종료되요!', data: competition.id});
+                await sendNotification([registeredTokens], {message: '곧 대회가 종료되요!', data: {competitonId: competition.id}});
 
             } else if (startDate - now < 24 * 3600000) {
 
@@ -201,7 +201,7 @@ exports.registerCompetition = async (req, res) => {
                 }
 
                 const registeredTokens = await getSubTokens(userIds);
-                await sendNotification([registeredTokens], {message: '곧 대회가 시작되요!', data: competition.id});
+                await sendNotification([registeredTokens], {message: '곧 대회가 시작되요!', data: {competitionId: competition.id}});
             }
 
         }, CHECK_INTERVAL)
