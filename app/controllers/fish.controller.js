@@ -898,12 +898,14 @@ exports.getRankingRealtime = async (req, res) => {
         let winners = [];
 
         let count = 0;
+        let duplicateCnt = 0;
 
         for (const item of ranking) {
 
             if (item.id !== frontItem.id) {
                 winners.push(item);
                 count ++;
+                duplicateCnt = 0;
             }
 
             if (item.userId === userId) {
@@ -911,7 +913,11 @@ exports.getRankingRealtime = async (req, res) => {
                 myRanking = count;
             }
 
-            frontItem = {...item};
+            if (duplicateCnt < 2) {
+                frontItem = {...item};
+            }
+
+            duplicateCnt ++;
         }
 
         return res.status(200).send({result: winners, myFish: myFish, myRanking: myRanking});
