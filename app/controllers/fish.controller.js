@@ -864,10 +864,11 @@ exports.getRankingRealtime = async (req, res) => {
     try {
         const [ranking, metadata] = await db.sequelize.query(`
         SELECT
-            x.*,
+            x.id, x.fishWidth as max, x.fishTypeId, x.userId,
             u.name AS userName,
             ust.name AS userStyle,
-            fi.image,
+            ft.name AS fishType,
+            fi.image as fishImage,
             p.avatar
         FROM
             (
@@ -886,6 +887,7 @@ exports.getRankingRealtime = async (req, res) => {
         JOIN profiles p ON p.userId = u.id
         JOIN userStyles ust ON ust.id = p.userStyleId
         JOIN fishImages fi ON fi.fishId = x.id
+        JOIN fishTypes ft ON ft.id = x.fishTypeId
         WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'}
         ORDER BY x.fishWidth DESC
     `);
