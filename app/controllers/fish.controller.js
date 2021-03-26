@@ -214,6 +214,8 @@ exports.commitFish = async (req, res) => {
         competitionId: req.body.competitionId,
         fishWidth: req.body.fishWidth.toFixed(2),
         fishTypeId: req.body.fishTypeId,
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
         status: 1,
         registerDate: new Date(),
     };
