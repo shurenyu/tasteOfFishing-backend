@@ -234,10 +234,17 @@ exports.commitFish = async (req, res) => {
     if (competition) {
         try {
             const fish = await Fish.create(newFish);
-            const data = req.body.fishImages.map(x => ({
-                fishId: fish.id,
-                image: x,
-            }));
+
+            const fishImages = req.body.fishImages;
+
+            let data = [];
+            for (let i = 0; i < fishImages.length; i++) {
+                data.push({
+                    fishId: fish.id,
+                    image: fishImages[i],
+                    imageType: i,
+                })
+            }
             await FishImage.bulkCreate(data, {returning: true});
 
             res.status(200).send({result: 'DIARY_FISH_COMMIT_SUCCESS', data: {id: fish.id, registerDate: fish.registerDate}});
@@ -552,7 +559,8 @@ exports.getDiariesByUser = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image']
+            attributes: ['id', 'image', 'imageType'],
+            order: [['imageType', 'ASC']]
         }, {
             model: User,
             attributes: ['id', 'name']

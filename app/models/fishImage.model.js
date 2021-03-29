@@ -5,6 +5,9 @@ module.exports = (sequelize, Sequelize) => {
         },
         image: {
             type: Sequelize.STRING(200)
+        },
+        imageType: {
+            type: Sequelize.INTEGER(4)
         }
     }, {
         timestamps: false,
