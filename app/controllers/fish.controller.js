@@ -238,11 +238,11 @@ exports.commitFish = async (req, res) => {
             const fishImages = req.body.fishImages;
 
             let data = [];
-            for (let i = 0; i < fishImages.length; i++) {
+            for (const item of fishImages) {
                 data.push({
                     fishId: fish.id,
-                    image: fishImages[i],
-                    imageType: i,
+                    image: item.image,
+                    imageType: item.imageType,
                 })
             }
             await FishImage.bulkCreate(data, {returning: true});
@@ -872,13 +872,13 @@ exports.getRankingRealtime = async (req, res) => {
     const userId = req.body.userId;
 
     try {
-        const [ranking, metadata] = await db.sequelize.query(`
+        const [winners, metadata] = await db.sequelize.query(`
         SELECT
             x.id, x.fishWidth as max, x.fishTypeId, x.userId,
             u.name AS userName,
             ust.name AS userStyle,
             ft.name AS fishType,
-            fi.image as fishImage,
+            fi.image as fishImage, fi.imageType as imageType,
             p.avatar
         FROM
             (
@@ -895,39 +895,21 @@ exports.getRankingRealtime = async (req, res) => {
             ) x
         JOIN users u ON u.id = x.userId
         JOIN profiles p ON p.userId = u.id
-        JOIN userStyles ust ON ust.id = p.userStyleId
+        LEFT JOIN userStyles ust ON ust.id = p.userStyleId
         JOIN fishImages fi ON fi.fishId = x.id
         JOIN fishTypes ft ON ft.id = x.fishTypeId
-        WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'}
+        WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'} AND fi.imageType = 1
         ORDER BY x.fishWidth DESC
     `);
 
         let myFish = {};
         let myRanking = 0;
-        let frontItem = {};
-        let winners = [];
 
-        let count = 0;
-        let duplicateCnt = 0;
+        for (let i = 0; i < winners.length; i++) {
 
-        for (const item of ranking) {
-
-            if (item.id !== frontItem.id) {
-                winners.push(item);
-                count ++; //1
-                duplicateCnt = 0; //
-            } else if (duplicateCnt === 0) {
-                winners[count - 1].fishImage = item.fishImage;
-                duplicateCnt ++;
-            } else {
-                duplicateCnt ++;
-            }
-
-            frontItem = {...item}
-
-            if (item.userId === userId) {
-                myFish = {...item};
-                myRanking = count;
+            if (winners[i]['userId'] === userId) {
+                myFish = {...winners[i]};
+                myRanking = i + 1;
             }
         }
 
