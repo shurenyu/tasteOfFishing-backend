@@ -9,6 +9,7 @@ const FishType = db.fishType;
 const UserStyle = db.userStyle;
 const EmailVerification = db.emailVerification;
 const EmailCertification = db.emailCertification;
+const UserPoint = db.userPoint;
 const PhoneCertification = db.phoneVerification;
 const validateRegisterInput = require("../validations/register.validation");
 const validateLoginInput = require("../validations/login.validation");
@@ -379,7 +380,16 @@ exports.socialLogin = async (req, res) => {
             if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
                 || new Date().getDate() !== oldUpdated.getDate())
             {
-                await updatePoint(user.id, 30, 1, '출석보상');
+                profile.pointAmount += 30;
+                await profile.save();
+
+                await UserPoint.create({
+                    userId: user.id,
+                    content: '출석보상',
+                    point: 30,
+                    createdDate: new Date(),
+                });
+
                 dailyCheck = true;
             }
 
