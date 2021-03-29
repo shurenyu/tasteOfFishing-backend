@@ -560,7 +560,7 @@ exports.getDiariesByUser = (req, res) => {
         }, {
             model: FishImage,
             attributes: ['id', 'image', 'imageType'],
-            order: [['imageType', 'ASC']]
+            order: [['imageType', 'ASC']],
         }, {
             model: User,
             attributes: ['id', 'name']
@@ -912,7 +912,7 @@ exports.getRankingRealtime = async (req, res) => {
 
         for (const item of ranking) {
 
-            if (item.id !== frontItem.id ) {
+            if (item.id !== frontItem.id) {
                 winners.push(item);
                 count ++; //1
                 duplicateCnt = 0; //

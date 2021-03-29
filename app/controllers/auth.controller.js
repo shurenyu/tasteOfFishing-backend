@@ -369,7 +369,21 @@ exports.socialLogin = async (req, res) => {
 
         const token = await generateToken(user);
         if (profile) {
-            return res.status(200).json({accessToken: token, userInfo: user, profile: profile});
+
+            let dailyCheck = false;
+            const oldUpdated = user.updatedDate;
+            user.updatedDate = new Date();
+            await user.save();
+
+            // if first login in the day
+            if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
+                || new Date().getDate() !== oldUpdated.getDate())
+            {
+                await updatePoint(user.id, 30, 1, '출석보상');
+                dailyCheck = true;
+            }
+
+            return res.status(200).json({accessToken: token, userInfo: user, profile: profile, dailyCheck});
         } else {
             return res.status(200).json({accessToken: token, userInfo: user});
         }
