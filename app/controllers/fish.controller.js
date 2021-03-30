@@ -92,7 +92,7 @@ const updateRecordAndSendMessage = async (fish, images) => {
 
                 if (fish.fishWidth > userCompetition.record2) {
                     userCompetition.record2 = fish.fishWidth;
-                    userCompetition.image = images[1];
+                    userCompetition.image = images[1].image;
                     await userCompetition.save();
                 }
 
@@ -169,7 +169,7 @@ const updateRecordAndSendMessage = async (fish, images) => {
 
                 if (Math.abs(userCompetition.record5) > Math.abs(fish.fishWidth - competition.questSpecialWidth)) {
                     userCompetition.record5 = fish.fishWidth - competition.questSpecialWidth;
-                    userCompetition.image = images[1];
+                    userCompetition.image = images[1].image;
                     await userCompetition.save();
                 }
 
