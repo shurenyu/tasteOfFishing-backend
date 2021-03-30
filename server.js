@@ -70,7 +70,6 @@ db.competition.findAll({
                     await rewarding(competition);
                     clearInterval(tmr);
                 })
-
             }
         }, CHECK_INTERVAL)
     }

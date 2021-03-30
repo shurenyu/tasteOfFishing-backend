@@ -1021,6 +1021,9 @@ exports.getMyDiaryInfo = async (req, res) => {
 
 
 const giveReward = async (userId, amount) => {
+    console.log('===========================')
+    console.log(userId, amount)
+
     try {
         await updatePoint(userId, parseInt(amount), 1, '대회상금');
         return 1;
@@ -1110,9 +1113,16 @@ exports.rewarding = async (competition) => {
                 }
             }
         }
-        winners1 = await UserCompetition.findAll({
-            where: filter
-        });
+
+        try {
+            winners1 = await UserCompetition.findAll({
+                where: filter
+            });
+
+            console.log('-------------winner length -----------', winners1.length)
+        } catch (err) {
+            console.log(err)
+        }
 
         for (const winner1 of winners1) {
             await giveReward(winner1.userId, Math.floor(competition.totalReward / winners1.length));
