@@ -112,7 +112,7 @@ exports.registerCompetition = async (req, res) => {
 
 };
 
-const rewarding = async (competition) => {
+exports.rewarding = async (competition) => {
     let winners1 = [];
     let winners2 = [];
     let winners3 = [];

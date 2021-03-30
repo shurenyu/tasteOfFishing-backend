@@ -5,6 +5,8 @@ const path = require('path');
 const cors = require("cors");
 const filesRouter = require("./app/file_upload.routes");
 const eventRouter = require("./app/controllers/event.controller");
+const {rewarding} = require("./app/controllers/competition.controller");
+const schedule = require('node-schedule');
 
 // cors policy
 const corsOptions = {
@@ -29,6 +31,7 @@ app.use('/events', eventRouter);
 
 // database model
 const db = require("./app/models");
+const Op = db.Sequelize.Op;
 
 db.sequelize.sync().then(res => {
     // db.sequelize.sync({alter: true});
@@ -39,6 +42,39 @@ db.sequelize.sync().then(res => {
 app.get("/", (req, res) => {
     res.json({msg: ["Welcome to fishing app"]});
 });
+
+const now = new Date().getTime()
+const CHECK_INTERVAL = 60000;
+
+db.competition.findAll({
+    where: {
+        endDate: {
+            [Op.gt]: now
+        }
+    }
+}).then(data => {
+    for (const competition of data) {
+        let tmr = setInterval(async function () {
+            const endDate = new Date(competition.endDate).getTime();
+            const startDate = new Date(competition.startDate).getTime();
+
+            if (now > endDate + 1000) {
+                console.log('the competition finished!!!!!!!!')
+                await rewarding(competition);
+                clearInterval(tmr);
+
+            } else if (endDate - now < CHECK_INTERVAL) {
+                console.log('competition will be finished within 1 min !!!');
+
+                const job = schedule.scheduleJob(endDate, async function () {
+                    await rewarding(competition);
+                    clearInterval(tmr);
+                })
+
+            }
+        }, CHECK_INTERVAL)
+    }
+})
 
 // routes
 require('./app/routes/auth.routes')(app);

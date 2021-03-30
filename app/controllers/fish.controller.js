@@ -544,7 +544,6 @@ exports.getFishesByUser = (req, res) => {
 };
 
 exports.getDiariesByUser = (req, res) => {
-    console.log('here')
     const userId = req.body.userId;
     const sortKey = req.body.sortKey; // 0-by date, 1-by width
 
