@@ -527,7 +527,7 @@ exports.getFishesByUser = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image']
+            attributes: ['id', 'image', 'imageType']
         }, {
             model: User,
             attributes: ['id', 'name']
@@ -598,7 +598,7 @@ exports.searchDiary = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image']
+            attributes: ['id', 'image', 'imageType']
         }, {
             model: Competition,
             attributes: ['id', 'name'],
@@ -626,7 +626,7 @@ exports.getFishesByCompetition = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image']
+            attributes: ['id', 'image', 'imageType']
         }]
     }).then((data) => {
         return res.status(200).send({result: data});
@@ -648,7 +648,7 @@ exports.getFishById = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image']
+            attributes: ['id', 'image', 'imageType']
         }, {
             model: DiaryComment,
             include: [{
