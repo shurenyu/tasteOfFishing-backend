@@ -5,7 +5,7 @@ const path = require('path');
 const cors = require("cors");
 const filesRouter = require("./app/file_upload.routes");
 const eventRouter = require("./app/controllers/event.controller");
-const {rewarding} = require("./app/controllers/competition.controller");
+const {rewarding} = require("./app/controllers/fish.controller");
 const schedule = require('node-schedule');
 
 // cors policy

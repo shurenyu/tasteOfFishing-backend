@@ -14,6 +14,7 @@ const DiaryComment = db.diaryComment;
 const Report = db.report;
 const Op = db.Sequelize.Op;
 const {getSubTokens, sendNotification} = require("../utils/push-notification");
+const {updatePoint} = require("./withdrawal.controller");
 
 const updateRecordAndSendMessage = async (fish, images) => {
     /* update the record of userCompetition */
@@ -995,8 +996,6 @@ exports.getMyDiaryInfo = async (req, res) => {
         for (let i = 0; i < 12; i++) {
             const start = new Date(year, i, 1);
             const end = new Date(year, i + 1, 1);
-            console.log('start: ', start)
-            console.log('end: ', end)
 
             const diaryPerMonth = await Fish.count({
                 where: {
@@ -1018,4 +1017,178 @@ exports.getMyDiaryInfo = async (req, res) => {
         return res.status(500).send({msg: err.toString()});
     }
 
+}
+
+
+const giveReward = async (userId, amount) => {
+    try {
+        await updatePoint(userId, parseInt(amount), 1, '대회상금');
+        return 1;
+    } catch (err) {
+        return 0;
+    }
+}
+
+exports.rewarding = async (competition) => {
+    let winners1 = [];
+    let winners2 = [];
+    let winners3 = [];
+
+    // give reward
+
+    if (competition.mode === 1 || competition.mode === 5) {
+        console.log('-------------testing--------------', competition.mode)
+        const [winners, metadata] = await db.sequelize.query(`
+                    SELECT *,
+                    (
+                        SELECT 1+ count(*)
+                        FROM userCompetitions uc1
+                        WHERE competitionId = ${competition.id} AND ${competition.mode === 1 ? 'uc1.record1 > uc.record1' : 'uc1.record5 < uc.record5'}
+                    ) as rank
+                    FROM userCompetitions uc
+                    HAVING competitionId = ${competition.id} AND rank < 4
+                    ORDER BY uc.record${competition.mode} DESC
+                `);
+
+        winners1 = winners.filter(x => x.rank === 1);
+        winners2 = winners.filter(x => x.rank === 2);
+        winners3 = winners.filter(x => x.rank === 3);
+        console.log('winners: ', winners)
+        console.log('first: ', winners1)
+        console.log('second: ', winners2)
+        console.log('third: ', winners3)
+
+        if (winners1.length === 1 && winners2.length === 1) {
+            await giveReward(winners1[0].userId, competition.reward1);
+            await giveReward(winners2[0].userId, competition.reward2);
+            if (winners3.length > 0) {
+                for (const winner3 of winners3) {
+                    await giveReward(winner3.userId, Math.floor(competition.reward3 / winners3.length));
+                }
+            }
+        } else if (winners1.length === 1 && winners2.length > 1) {
+            await giveReward(winners1[0].userId, competition.reward1);
+            for (const winner2 of winners2) {
+                await giveReward(winner2.userId, Math.floor((competition.reward2 + competition.reward3) / winners2.length));
+            }
+        } else if (winners1.length === 2) {
+            await giveReward(winners1[0].userId, Math.floor((competition.reward1 + competition.reward2) / 2));
+            if (winners3.length > 0) {
+                for (const winner3 of winners3) {
+                    await giveReward(winner3.userId, Math.floor(competition.reward3 / winners3.length));
+                }
+            }
+        } else if (winners1.length > 2) {
+            for (const winner1 of winners1) {
+                await giveReward(winner1.userId, Math.floor(competition.totalReward / winners1.length));
+            }
+        }
+    } else {
+        let filter = {competitionId: competition.id};
+
+        if (competition.mode === 2) {
+            filter = {
+                competitionId: competition.id,
+                record2: {
+                    [Op.gte]: competition.questFishWidth
+                }
+            }
+        } else if (competition.mode === 3) {
+            filter = {
+                competitionId: competition.id,
+                record3: {
+                    [Op.gte]: competition.questFishNumber
+                }
+            }
+        } else if (competition.mode === 4) {
+            filter = {
+                competitionId: competition.id,
+                record4: {
+                    [Op.gte]: competition.questFishNumber
+                }
+            }
+        }
+        winners1 = await UserCompetition.findAll({
+            where: filter
+        });
+
+        for (const winner1 of winners1) {
+            await giveReward(winner1.userId, Math.floor(competition.totalReward / winners1.length));
+        }
+    }
+
+    // update style of winners
+
+    for (const winner of winners1) {
+        const record = await getRecordByUser(winner.userId);
+        const championShipCount = record.rankChampionshipCount + record.questChampionshipCount;
+        const profile = await Profile.findOne({
+            where: {userId: winner.userId}
+        });
+        if (championShipCount >= 10) {
+            profile.userStyleId = 8;
+        } else if (championShipCount >= 5) {
+            profile.userStyleId = 7;
+        } else if (championShipCount >= 1) {
+            profile.userStyleId = 6;
+        }
+        await profile.save();
+    }
+}
+
+const getRecordByUser = async (userId) => {
+    let totalDiaryCount = 0;
+    let rankDiaryCount = 0;
+    let questDiaryCount = 0;
+    let rankChampionshipCount = 0;
+    let questChampionshipCount = 0;
+
+    const myCompetitions = await UserCompetition.findAll({
+        where: {userId: userId},
+        include: [{
+            model: Competition,
+        }]
+    });
+
+    totalDiaryCount = myCompetitions.length;
+
+    for (const item of myCompetitions) {
+        if (item.competition && item.competition.mode === 1) {
+            rankDiaryCount += 1;
+
+            const maxScore = await UserCompetition.max('record1', {
+                where: {competitionId: item.competition.id}
+            });
+
+            if (item.record1 === maxScore) rankChampionshipCount += 1;
+        } else if (item.competition) {
+            questDiaryCount += 1;
+
+            const comp = await Competition.findOne({
+                where: {id: item.competition.id}
+            });
+
+            if (item.competition.mode === 2) {
+                if (item.record2 >= comp.questFishWidth) questChampionshipCount += 1;
+            } else if (item.competition.mode === 3) {
+                if (item.record3 >= comp.questFishNumber) questChampionshipCount += 1;
+            } else if (item.competition.mode === 4) {
+                if (item.record4 >= comp.questFishNumber) questChampionshipCount += 1;
+            } else {
+                const minBias = await UserCompetition.min('record5', {
+                    where: {competitionId: item.competition.id}
+                });
+
+                if (item.record5 === minBias) questChampionshipCount += 1;
+            }
+        }
+    }
+
+    return {
+        totalDiaryCount,
+        rankDiaryCount,
+        questDiaryCount,
+        rankChampionshipCount,
+        questChampionshipCount,
+    };
 }
