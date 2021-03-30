@@ -1058,7 +1058,7 @@ exports.rewarding = async (competition) => {
         console.log('second: ', winners2)
         console.log('third: ', winners3)
 
-        if (winners1.length === 1 && winners2 === 0) {
+        if (winners1.length === 1 && winners2.length === 0) {
             await giveReward(winners1[0].userId, competition.reward1);
         } else if (winners1.length === 1 && winners2.length === 1) {
             await giveReward(winners1[0].userId, competition.reward1);
