@@ -268,7 +268,8 @@ exports.addFishImage = (req, res) => {
 
     const data = images.map(x => ({
         fishId: fishId,
-        image: x,
+        image: x.image,
+        imageType: x.imageType,
     }));
 
     FishImage.bulkCreate(data, {returning: true})
@@ -773,7 +774,8 @@ exports.updateFish = async (req, res) => {
             const imageList = JSON.parse(JSON.stringify(req.body.fishImages));
             const images = imageList.map(x => ({
                 fishId: fish.id,
-                image: x,
+                image: x.image,
+                imageType: x.fishImage,
             }));
 
             await FishImage.destroy({
