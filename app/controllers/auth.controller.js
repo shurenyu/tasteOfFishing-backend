@@ -278,7 +278,7 @@ exports.appLogin = async (req, res) => {
     }
 };
 
-const getUserRecord = async (userId) => {
+exports.getUserRecord = async (userId) => {
     let totalDiaryCount = 0;
     let rankDiaryCount = 0;
     let questDiaryCount = 0;

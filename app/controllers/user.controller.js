@@ -221,6 +221,8 @@ exports.getMyInfo = async (req, res) => {
                 model: Profile,
                 include: [{
                     model: UserStyle,
+                }, {
+                    model: FishType,
                 }]
             }]
         });
