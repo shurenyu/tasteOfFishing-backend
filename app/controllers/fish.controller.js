@@ -520,7 +520,7 @@ exports.getFishesByUser = (req, res) => {
     Fish.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
-        order: [['fishWidth', 'DESC']],
+        order: [['fishWidth', 'DESC'], [FishImage, 'imageType', 'ASC']],
         where: filter,
         include: [{
             model: FishType,
@@ -543,13 +543,14 @@ exports.getFishesByUser = (req, res) => {
 };
 
 exports.getDiariesByUser = (req, res) => {
+    console.log('here')
     const userId = req.body.userId;
     const sortKey = req.body.sortKey; // 0-by date, 1-by width
 
     Fish.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
-        order: [[sortKey === 1 ? 'fishWidth' : 'registerDate', 'DESC']],
+        order: [[sortKey === 1 ? 'fishWidth' : 'registerDate', 'DESC'], [FishImage, 'imageType', 'ASC']],
         where: {
             userId: userId,
             status: 1
@@ -560,7 +561,6 @@ exports.getDiariesByUser = (req, res) => {
         }, {
             model: FishImage,
             attributes: ['id', 'image', 'imageType'],
-            order: [['imageType', 'ASC']],
         }, {
             model: User,
             attributes: ['id', 'name']
@@ -589,6 +589,7 @@ exports.searchDiary = (req, res) => {
     Fish.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
+        order: [['fishWidth', 'DESC'], [FishImage, 'imageType', 'ASC']],
         where: {
             userId: userId,
             status: 1
@@ -598,7 +599,8 @@ exports.searchDiary = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image', 'imageType']
+            attributes: ['id', 'image', 'imageType'],
+            order: [['imageType', 'ASC']],
         }, {
             model: Competition,
             attributes: ['id', 'name'],
@@ -680,6 +682,7 @@ exports.getAllFishes = async (req, res) => {
         const fishes = await Fish.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
+            order: [['fishWidth', 'DESC'], [FishImage, 'imageType', 'ASC']],
             include: [{
                 model: User,
                 attributes: ['id', 'name'],
@@ -720,7 +723,7 @@ exports.getFishesByMultiFilter = async (req, res) => {
         const fishes = await Fish.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
-            order: [[order === 0 ? 'registerDate' : 'fishWidth', 'DESC']],
+            order: [[order === 0 ? 'registerDate' : 'fishWidth', 'DESC'], [FishImage, 'imageType', 'ASC']],
             where: filter,
             include: [{
                 model: User,
