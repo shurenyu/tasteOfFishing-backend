@@ -775,7 +775,7 @@ exports.updateFish = async (req, res) => {
             const images = imageList.map(x => ({
                 fishId: fish.id,
                 image: x.image,
-                imageType: x.fishImage,
+                imageType: x.imageType,
             }));
 
             await FishImage.destroy({
