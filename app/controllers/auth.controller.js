@@ -365,7 +365,12 @@ exports.socialLogin = async (req, res) => {
         }
 
         const profile = await Profile.findOne({
-            where: {userId: user.id}
+            where: {userId: user.id},
+            include: [{
+                model: FishType
+            }, {
+                model: UserStyle
+            }]
         });
 
         const token = await generateToken(user);
