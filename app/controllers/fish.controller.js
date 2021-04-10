@@ -717,6 +717,8 @@ exports.getFishesByMultiFilter = async (req, res) => {
         if (competitionId) filter.competitionId = competitionId;
         if (status) filter.status = status;
 
+        const orderList = order === 0 ? [['registerDate', 'DESC']] : [['fishWidth', 'DESC']]
+
         const totalCount = await Fish.count({
             where: filter
         });
@@ -724,7 +726,7 @@ exports.getFishesByMultiFilter = async (req, res) => {
         const fishes = await Fish.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
-            order: [[order === 0 ? 'registerDate' : 'fishWidth', 'DESC'], [FishImage, 'imageType', 'ASC']],
+            order: orderList,
             where: filter,
             include: [{
                 model: User,
@@ -741,6 +743,29 @@ exports.getFishesByMultiFilter = async (req, res) => {
                 attributes: ['id', 'name']
             }]
         });
+
+        // const totalCount = await Fish.count();
+
+        // const fishes = await Fish.findAll({
+        //     // order: [[order === 0 ? 'registerDate' : 'fishWidth', 'DESC']],
+        //     order: [['fishWidth', 'DESC']],
+        //     where: filter,
+        //     include: [{
+        //         model: User,
+        //         attributes: ['id', 'name'],
+        //         include: [{
+        //             model: Profile,
+        //             attributes: ['id', 'username']
+        //         }]
+        //     }, {
+        //         model: Competition,
+        //         attributes: ['id', 'name']
+        //     }, {
+        //         model: FishType,
+        //         attributes: ['id', 'name']
+        //     }]
+        //
+        // });
 
         return res.status(200).send({result: fishes, totalCount: totalCount});
     } catch (err) {

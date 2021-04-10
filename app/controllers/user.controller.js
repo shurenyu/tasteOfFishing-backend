@@ -443,6 +443,31 @@ exports.getUserPointHistory = (req, res) => {
 
 }
 
+exports.updateUserPoint = async (req, res) => {
+    try {
+        const userId = req.body.userId;
+        const pointAmount = req.body.pointAmount;
+
+        const profile = await Profile.findOne({
+            where: {userId: userId}
+        });
+
+        profile.pointAmount = pointAmount;
+        await profile.save();
+
+        const userPoint = await UserPoint.create({
+            userId: userId,
+            content: '관리자 수정',
+            point: pointAmount,
+            createdDate: new Date()
+        });
+
+        return res.status(200).send({result: userPoint});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
+
 
 const Test = db.test
 exports.testing = async (req, res) => {

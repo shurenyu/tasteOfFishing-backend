@@ -39,16 +39,18 @@ exports.topLevelUsers = (req, res) => {
     User.findAll({
         limit: req.body.limit || 1000000,
         attributes: ['id', 'name'],
+        order: [[Profile, 'level', 'DESC']],
         include: [{
             model: Profile,
-            order: [['level', 'DESC']],
             attributes: ['id', 'level', 'username'],
             include: [{
                 model: UserStyle
             }]
         }],
         where: {
-            type: 1
+            type: {
+                [Op.gt]: 0
+            }
         }
     }).then((data) => {
         return res.status(200).send({result: data});
@@ -77,17 +79,23 @@ exports.getAverageWithdrawalMonthly = async (req, res) => {
         const oldest = await Withdrawal.findOne({
             order: [['createdDate', 'ASC']]
         });
-        const oldestDate = oldest.createdDate;
 
-        let months;
-        months = (now.getFullYear() - oldestDate.getFullYear()) * 12;
-        months -= oldestDate.getMonth();
-        months += now.getMonth();
-        months = months < 0 ? 1 : months;
+        if (oldest) {
+            const oldestDate = oldest.createdDate;
 
-        const totalCount = await Withdrawal.count();
+            let months;
+            months = (now.getFullYear() - oldestDate.getFullYear()) * 12;
+            months -= oldestDate.getMonth();
+            months += now.getMonth();
+            months = months < 0 ? 1 : months;
 
-        return res.status(200).send({result: Math.floor(totalCount / months)});
+            const totalCount = await Withdrawal.count();
+
+            return res.status(200).send({result: Math.floor(totalCount / months)});
+        } else {
+            return res.status(200).send({result: 0});
+        }
+
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }

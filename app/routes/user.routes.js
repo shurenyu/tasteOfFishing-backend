@@ -84,6 +84,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/user/point/update",
+        [authJwt.verifyToken],
+        controller.updateUserPoint
+    );
+
+    app.all(
         "/test",
         [authJwt.verifyToken],
         controller.testing
