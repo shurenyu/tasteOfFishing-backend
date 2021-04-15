@@ -8,7 +8,10 @@ module.exports = (sequelize, Sequelize) => {
         },
         imageType: {
             type: Sequelize.INTEGER(4)
-        }
+        },
+        measureInfo: {
+            type: Sequelize.STRING(200)
+        },
     }, {
         timestamps: false,
         underscored: false,

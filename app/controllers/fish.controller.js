@@ -244,6 +244,7 @@ exports.commitFish = async (req, res) => {
                     fishId: fish.id,
                     image: item.image,
                     imageType: item.imageType,
+                    measureInfo: item.measureInfo,
                 })
             }
             await FishImage.bulkCreate(data, {returning: true});
@@ -271,6 +272,7 @@ exports.addFishImage = (req, res) => {
         fishId: fishId,
         image: x.image,
         imageType: x.imageType,
+        measureInfo: item.measureInfo,
     }));
 
     FishImage.bulkCreate(data, {returning: true})
@@ -529,7 +531,7 @@ exports.getFishesByUser = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image', 'imageType']
+            attributes: ['id', 'image', 'imageType', 'measureInfo']
         }, {
             model: User,
             attributes: ['id', 'name']
@@ -561,7 +563,7 @@ exports.getDiariesByUser = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image', 'imageType'],
+            attributes: ['id', 'image', 'imageType', 'measureInfo'],
         }, {
             model: User,
             attributes: ['id', 'name']
@@ -600,7 +602,7 @@ exports.searchDiary = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image', 'imageType'],
+            attributes: ['id', 'image', 'imageType', 'measureInfo'],
             order: [['imageType', 'ASC']],
         }, {
             model: Competition,
@@ -629,7 +631,7 @@ exports.getFishesByCompetition = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image', 'imageType']
+            attributes: ['id', 'image', 'imageType', 'measureInfo']
         }]
     }).then((data) => {
         return res.status(200).send({result: data});
@@ -651,7 +653,7 @@ exports.getFishById = (req, res) => {
             attributes: ['id', 'name']
         }, {
             model: FishImage,
-            attributes: ['id', 'image', 'imageType']
+            attributes: ['id', 'image', 'imageType', 'measureInfo']
         }, {
             model: DiaryComment,
             include: [{
@@ -801,6 +803,7 @@ exports.updateFish = async (req, res) => {
                 fishId: fish.id,
                 image: x.image,
                 imageType: x.imageType,
+                measureInfo: x.measureInfo,
             }));
 
             await FishImage.destroy({
@@ -908,7 +911,7 @@ exports.getRankingRealtime = async (req, res) => {
             u.name AS userName,
             ust.name AS userStyle,
             ft.name AS fishType,
-            fi.image as fishImage, fi.imageType as imageType,
+            fi.image as fishImage, fi.imageType as imageType, fi.measureInfo as measureInfo
             p.avatar
         FROM
             (
