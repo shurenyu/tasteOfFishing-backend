@@ -911,7 +911,7 @@ exports.getRankingRealtime = async (req, res) => {
             u.name AS userName,
             ust.name AS userStyle,
             ft.name AS fishType,
-            fi.image as fishImage, fi.imageType as imageType, fi.measureInfo as measureInfo
+            fi.image as fishImage, fi.imageType as imageType, fi.measureInfo as measureInfo,
             p.avatar
         FROM
             (
