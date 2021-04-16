@@ -70,6 +70,9 @@ module.exports = (sequelize, Sequelize) => {
         termsAndConditions: {
             type: Sequelize.STRING(1200)
         },
+        needApplication: {
+            type: Sequelize.INTEGER(4)
+        },
         createdDate: {
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW

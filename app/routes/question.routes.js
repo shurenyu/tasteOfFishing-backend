@@ -29,6 +29,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/question/get-by-user",
+        [authJwt.verifyToken],
+        controller.getQuestionByUser
+    );
+
+    app.all(
         "/question/get-all",
         [authJwt.verifyToken],
         controller.getAllQuestion

@@ -2,6 +2,7 @@ const db = require("../models");
 const schedule = require('node-schedule');
 const Competition = db.competition;
 const UserCompetition = db.userCompetition;
+const UserApplication = db.userApplication;
 const Fish = db.fish;
 const FishType = db.fishType;
 const User = db.user;
@@ -129,6 +130,19 @@ exports.updateCompetition = async (req, res) => {
     }
 };
 
+exports.getCompetitionTerms = (req, res) => {
+    Competition.findOne({
+        attributes: ['id', 'termsAndCondition'],
+        where: {
+            id: req.body.competitionId,
+        }
+    }).then(res => {
+        return res.status(200).send({result: 'COMPETITION.UPDATE_SUCCESS'});
+    }).catch ((err) => {
+        return res.status(500).send({msg: err.toString()});
+    })
+}
+
 // exports.getCompetitionById = async (req, res) => {
 //     const competitionId = req.body.competitionId;
 //
@@ -194,7 +208,15 @@ exports.getCompetitionById = async (req, res) => {
             }
         })
 
-        return res.status(200).send({result: {...competition.dataValues, userCount: cntUser}, ranking: winners, myStatus: !!myStatus});
+        const isApplied = await UserApplication.findOne({
+            where: {
+                competitionId: competitionId,
+                userId: userId || 0,
+            }
+        })
+
+        return res.status(200).send({result: {...competition.dataValues, userCount: cntUser},
+                            ranking: winners, myStatus: !!myStatus, isApplied: !!isApplied});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }
@@ -469,6 +491,7 @@ exports.getCompetitionByMultiFilter = async (req, res) => {
         const data = await Competition.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
+            order: [['createdDate', 'DESC']],
             where: filter
         });
 
@@ -495,17 +518,24 @@ exports.getCompetitionRanking = async (req, res) => {
             where: {id: competitionId}
         });
 
-        const sortingKey = ['DESC', 'DESC', 'DESC', 'DESC', 'ASC'];
+        const norm = competition.questSpecialWidth;
+
+        let order = (competition.mode !== 5)
+            ? [[`record${competition.mode}`, 'DESC']]
+            : [[db.sequelize.fn('ABS', db.sequelize.literal('record5 - ' + norm)), 'ASC']];
 
         let data = [];
 
         if (competition.mode > 0) {
             data = await UserCompetition.findAll({
                 limit: limit || 1000000,
-                order: [[`record${competition.mode}`, sortingKey[competition.mode - 1]]],
+                order: order,
                 attributes: ['id', `record${competition.mode}`, 'image'],
                 where: {
                     competitionId: competitionId,
+                    // [`record${competition.mode}`]: {
+                    //     [Op.gt]: 0,
+                    // },
                 },
                 include: [{
                     model: User,
@@ -523,6 +553,55 @@ exports.getCompetitionRanking = async (req, res) => {
         const myRanking = data.findIndex(x => x.user.id === req.body.userId);
 
         return res.status(200).send({result: data, myRanking: myRanking + 1});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+};
+
+
+exports.getCompetitionOverview = async (req, res) => {
+
+    try {
+        const competitionId = req.body.competitionId;
+        const limit = req.body.limit || 10000;
+        const offset = req.body.offset || 0;
+
+        const competition = await Competition.findOne({
+            where: {id: competitionId}
+        });
+
+        const norm = competition.questSpecialWidth;
+
+        let order = (competition.mode !== 5)
+            ? [[`record${competition.mode}`, 'DESC']]
+            : [[db.sequelize.fn('ABS', db.sequelize.literal('record5 - ' + norm)), 'ASC']];
+
+        let data = [];
+
+        if (competition.mode > 0) {
+            data = await UserCompetition.findAndCountAll({
+                limit: limit,
+                offset: offset,
+                order: order,
+                attributes: ['id', `record${competition.mode}`, 'image'],
+                where: {
+                    competitionId: competitionId,
+                },
+                include: [{
+                    model: User,
+                    attributes: ['id', 'name', 'email', 'createdDate'],
+                    include: [{
+                        model: Profile,
+                        attributes: ['id', 'username', 'level', 'avatar'],
+                        include: [{
+                            model: UserStyle
+                        }]
+                    }]
+                }]
+            });
+        }
+
+        return res.status(200).send({result: data});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
     }

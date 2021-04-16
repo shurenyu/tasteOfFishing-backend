@@ -5,6 +5,7 @@ const Profile = db.profile;
 const UserStyle = db.userStyle;
 const FishType = db.fishType;
 const UserCompetition = db.userCompetition;
+const UserApplication = db.userApplication;
 const Competition = db.competition;
 const UserPoint = db.userPoint;
 const Op = db.Sequelize.Op;
@@ -235,6 +236,70 @@ exports.getMyInfo = async (req, res) => {
     }
 }
 
+exports.applicationCompetition = async (req, res) => {
+    try {
+        const userId = req.body.userId;
+        const competitionId = req.body.competitionId;
+        const attendPoint = req.body.attendPoint;
+
+        const userApplication = await UserApplication.findOne({
+            where: {
+                userId: userId,
+                competitionId: competitionId
+            }
+        });
+
+        if (userApplication) {
+            return res.status(400).send({msg: 'ALREADY_APPLIED'});
+        }
+
+        const profile = await Profile.findOne({
+            where: {
+                userId: userId,
+            }
+        });
+
+        if (profile.pointAmount < attendPoint) {
+            return res.status(400).send({result: 'POINT_NOT_ENOUGH'});
+        }
+
+        await UserApplication.create({
+            userId: userId,
+            competitionId: competitionId,
+            createdDate: new Date()
+        });
+
+        if (attendPoint > 0) {
+            // update the pointAmount, level, exp, and style
+            await updatePoint(userId, attendPoint, 0, '대회접수');
+        }
+        // profile.exp += 150;
+        // profile.level = Math.floor(profile.exp / 1000);
+        // const attendCount = await UserCompetition.count({
+        //     where: {userId: userId},
+        // });
+        //
+        // if (profile.userStyleId <= 5) {
+        //     if (attendCount <= 1) {
+        //         profile.userStyleId = 1;
+        //     } else if (attendCount <= 10) {
+        //         profile.userStyleId = 2;
+        //     } else if (attendCount <= 20) {
+        //         profile.userStyleId = 3;
+        //     } else if (attendCount <= 50) {
+        //         profile.userStyleId = 4;
+        //     } else if (attendCount <= 100) {
+        //         profile.userStyleId = 5;
+        //     }
+        // }
+        // await profile.save();
+
+        return res.status(200).send({result: 'SUCCESS_COMPETITION_APPLY', userInfo: profile});
+    } catch (err) {
+        return res.status(500).send({msg: err.toString()});
+    }
+}
+
 exports.attendCompetition = async (req, res) => {
     try {
         const userId = req.body.userId;
@@ -268,8 +333,11 @@ exports.attendCompetition = async (req, res) => {
             createdDate: new Date()
         });
 
-        // update the pointAmount, level, exp, and style
-        await updatePoint(userId, attendPoint, 0, '대회참여');
+        if (attendPoint > 0) {
+            // update the pointAmount, level, exp, and style
+            await updatePoint(userId, attendPoint, 0, '대회참여');
+        }
+
         profile.exp += 150;
         profile.level = Math.floor(profile.exp / 1000);
         const attendCount = await UserCompetition.count({

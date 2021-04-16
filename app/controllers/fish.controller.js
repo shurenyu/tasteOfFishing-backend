@@ -50,11 +50,17 @@ const updateRecordAndSendMessage = async (fish, images) => {
                 });
                 const oldWinners = temp.map(x => x.userId);
 
-                userCompetition.record1 = await Fish.sum('fishWidth', {
-                    limit: competition.rankFishNumber,
-                    order: [['fishWidth', 'DESC']],
-                    where: filter
-                });
+                const [record, metadata] = await db.sequelize.query(`
+                    SELECT SUM(h.fishWidth) as maxsum
+                    FROM (
+                        SELECT f.fishWidth
+                        FROM fishes f
+                        WHERE f.userId = 100 AND f.competitionId = 120
+                        ORDER BY f.fishWidth DESC
+                        LIMIT ${competition.rankFishNumber}
+                    ) as h
+                `);
+                userCompetition.record1 = record[0]['maxsum'];
                 await userCompetition.save();
 
                 temp = await UserCompetition.findAll({
@@ -167,8 +173,10 @@ const updateRecordAndSendMessage = async (fish, images) => {
                 });
                 const oldWinners = temp.map(x => x.userId);
 
-                if (Math.abs(userCompetition.record5) > Math.abs(fish.fishWidth - competition.questSpecialWidth)) {
-                    userCompetition.record5 = fish.fishWidth - competition.questSpecialWidth;
+                const norm = competition.questSpecialWidth;
+                if ((userCompetition.record5 <= 0.0) ||
+                    (Math.abs(userCompetition.record5 - norm) > Math.abs(fish.fishWidth - norm))) {
+                    userCompetition.record5 = fish.fishWidth;
                     userCompetition.image = images[1].image;
                     await userCompetition.save();
                 }

@@ -67,6 +67,18 @@ exports.getQuestionById = (req, res) => {
     })
 };
 
+exports.getQuestionByUser = (req, res) => {
+    const userId = req.body.userId;
+    Question.findOne({
+        where: {userId: userId}
+    }).then((data) => {
+        return res.status(200).send({result: data});
+    }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+};
+
+
 exports.updateQuestion = async (req, res) => {
     const questionId = req.body.questionId;
 

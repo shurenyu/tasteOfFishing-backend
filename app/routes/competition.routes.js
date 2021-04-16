@@ -94,4 +94,10 @@ module.exports = function (app) {
         controller.getCompetitionRanking
     );
 
+    app.all(
+        "/competition/overview-by-id",
+        [authJwt.verifyToken],
+        controller.getCompetitionOverview
+    );
+
 };
