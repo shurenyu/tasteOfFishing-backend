@@ -136,8 +136,8 @@ exports.getCompetitionTerms = (req, res) => {
         where: {
             id: req.body.competitionId,
         }
-    }).then(res => {
-        return res.status(200).send({result: 'COMPETITION.UPDATE_SUCCESS'});
+    }).then(data => {
+        return res.status(200).send({result: data});
     }).catch ((err) => {
         return res.status(500).send({msg: err.toString()});
     })

@@ -24,7 +24,7 @@ module.exports = (sequelize, Sequelize) => {
         },
         record5: {
             type: Sequelize.DOUBLE,
-            defaultValue: 100000,
+            defaultValue: 0,
         },
         image: {
             type: Sequelize.STRING(255)
