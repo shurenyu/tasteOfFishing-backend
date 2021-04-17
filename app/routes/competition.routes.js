@@ -23,6 +23,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/competition/terms",
+        [authJwt.verifyToken],
+        controller.getCompetitionTerms
+    );
+
+    app.all(
         "/competition/get-all",
         [authJwt.verifyToken],
         controller.getAllCompetitions

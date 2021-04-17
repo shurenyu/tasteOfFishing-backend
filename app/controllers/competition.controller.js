@@ -37,8 +37,11 @@ exports.registerCompetition = async (req, res) => {
     // }
 
     try {
-        const newCompetition = {
-            ...req.body
+        const newCompetition = req.body.type === 0 ? {
+            ...req.body,
+        } : {
+            ...req.body,
+            needApplication: 1,
         };
 
         const contest = await Competition.create(newCompetition);
@@ -132,12 +135,12 @@ exports.updateCompetition = async (req, res) => {
 
 exports.getCompetitionTerms = (req, res) => {
     Competition.findOne({
-        attributes: ['id', 'termsAndCondition'],
+        attributes: ['id', 'termsAndConditions'],
         where: {
             id: req.body.competitionId,
         }
     }).then(data => {
-        return res.status(200).send({result: data});
+        return res.status(200).send({result: data['termsAndConditions']});
     }).catch ((err) => {
         return res.status(500).send({msg: err.toString()});
     })
