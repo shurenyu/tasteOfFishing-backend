@@ -236,7 +236,7 @@ exports.getMyInfo = async (req, res) => {
     }
 }
 
-exports.applicationCompetition = async (req, res) => {
+exports.applyCompetition = async (req, res) => {
     try {
         const userId = req.body.userId;
         const competitionId = req.body.competitionId;
@@ -294,6 +294,10 @@ exports.applicationCompetition = async (req, res) => {
         // }
         // await profile.save();
 
+        if (attendPoint > 0) { //접수했을 때 EXP수정할 경우 이 코드를 실행하여 결과값을 반환한다.
+            profile.pointAmount -= attendPoint;
+        }
+
         return res.status(200).send({result: 'SUCCESS_COMPETITION_APPLY', userInfo: profile});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
@@ -336,6 +340,7 @@ exports.attendCompetition = async (req, res) => {
         if (attendPoint > 0) {
             // update the pointAmount, level, exp, and style
             await updatePoint(userId, attendPoint, 0, '대회참여');
+            profile.pointAmount -= attendPoint;
         }
 
         profile.exp += 150;

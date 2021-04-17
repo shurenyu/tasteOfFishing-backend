@@ -59,6 +59,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/user/apply-competition",
+        [authJwt.verifyToken],
+        controller.applyCompetition
+    );
+
+    app.all(
         "/user/attend-competition",
         [authJwt.verifyToken],
         controller.attendCompetition
