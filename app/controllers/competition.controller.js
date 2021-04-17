@@ -244,7 +244,7 @@ exports.getNewCompetition = (req, res) => {
     Competition.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
-        order: [['startDate', 'ASC']],
+        order: [['createdDate', 'DESC']],
         where: {
             endDate: {
                 [Op.gt]: (new Date()).getTime()
