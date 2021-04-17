@@ -289,6 +289,7 @@ exports.getProgressingCompetitions = (req, res) => {
     Competition.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
+        order: [['createdDate', 'DESC']],
         where: {
             startDate: {
                 [Op.lte]: now.getTime()
@@ -428,6 +429,7 @@ exports.getRankCompetitions = (req, res) => {
     Competition.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
+        order: [['createdDate', 'DESC']],
         where: {
             mode: 1
         }
@@ -442,6 +444,7 @@ exports.getQuestCompetitions = (req, res) => {
     Competition.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
+        order: [['createdDate', 'DESC']],
         where: {
             mode: {
                 [Op.gt]: 1
