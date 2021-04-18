@@ -222,8 +222,7 @@ exports.appLogin = async (req, res) => {
 
                     // if first login in the day
                     if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
-                        || new Date().getDate() !== oldUpdated.getDate())
-                    {
+                        || new Date().getDate() !== oldUpdated.getDate()) {
                         await updatePoint(user.id, 30, 1, '출석보상');
                         dailyCheck = true;
                     }
@@ -264,7 +263,11 @@ exports.appLogin = async (req, res) => {
 
                     const job2 = schedule.scheduleJob(new Date(after7days), async function () {
                         const registeredToken = await getSubTokens(user.id);
-                        return sendNotification([registeredToken], {message: '낚시의맛을 이용하신지 1주일이 넘었어요!', data: {home: 1}});
+                        return sendNotification(
+                            [registeredToken], {
+                                message: '낚시의맛을 이용하신지 1주일이 넘었어요!',
+                                data: {home: 1, message: '낚시의맛을 이용하신지 1주일이 넘었어요!'}
+                            });
                     });
                 } else {
                     res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
@@ -384,8 +387,7 @@ exports.socialLogin = async (req, res) => {
 
             // if first login in the day
             if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
-                || new Date().getDate() !== oldUpdated.getDate())
-            {
+                || new Date().getDate() !== oldUpdated.getDate()) {
                 profile.pointAmount += 30;
                 await profile.save();
 
