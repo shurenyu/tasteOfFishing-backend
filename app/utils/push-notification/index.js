@@ -21,7 +21,7 @@ exports.sendNotification = async (tokens, data) => {
 	let token_array  = [...new Set(tokens)];
 	// notification object with title and text
 	const notification = {
-		clickAction: 'FISHING_TASTE_CLICK_ACTION',
+		click_action: 'FISHING_TASTE_CLICK_ACTION',
 		title: data.title,
 		body: data.message,
 		//data: data.data,
@@ -29,11 +29,12 @@ exports.sendNotification = async (tokens, data) => {
 
 	// fcm device tokens array
 	const notification_body = {
+		'priority': 'high',
 		'notification': notification,
 		'registration_ids': token_array,
 		'data': data.data,
 	};
-
+	console.log(JSON.stringify(notification_body));
 	fetch('https://fcm.googleapis.com/fcm/send', {
 		'method': 'POST',
 		'headers': {
