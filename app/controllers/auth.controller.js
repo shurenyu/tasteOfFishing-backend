@@ -290,6 +290,7 @@ const getUserRecord = async (userId) => {
             userId: userId
         }
     });
+    console.log('total: ', totalDiaryCount)
 
     const myCompetitions = await UserCompetition.findAll({
         where: {userId: userId},

@@ -69,7 +69,8 @@ exports.getQuestionById = (req, res) => {
 
 exports.getQuestionByUser = (req, res) => {
     const userId = req.body.userId;
-    Question.findOne({
+    Question.findAll({
+        limit: req.body.limit || 1000,
         where: {userId: userId}
     }).then((data) => {
         return res.status(200).send({result: data});
