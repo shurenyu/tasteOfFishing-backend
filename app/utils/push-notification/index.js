@@ -34,7 +34,7 @@ exports.sendNotification = async (tokens, data) => {
 		'registration_ids': token_array,
 		'data': data.data,
 	};
-	console.log(JSON.stringify(notification_body));
+	//console.log('************', JSON.stringify(notification_body));
 	fetch('https://fcm.googleapis.com/fcm/send', {
 		'method': 'POST',
 		'headers': {
