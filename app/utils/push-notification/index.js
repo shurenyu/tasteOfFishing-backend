@@ -24,13 +24,14 @@ exports.sendNotification = async (tokens, data) => {
 		clickAction: 'FISHING_TASTE_CLICK_ACTION',
 		title: data.title,
 		body: data.message,
-		data: data.data,
+		//data: data.data,
 	};
 
 	// fcm device tokens array
 	const notification_body = {
 		'notification': notification,
 		'registration_ids': token_array,
+		'data': data.data,
 	};
 
 	fetch('https://fcm.googleapis.com/fcm/send', {
