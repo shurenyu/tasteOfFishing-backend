@@ -2,6 +2,7 @@ const db = require("../models");
 const Question = db.question;
 const AnswerComment = db.answerComment;
 const User = db.user;
+const {getSubTokens, sendNotification} = require("../utils/push-notification");
 
 exports.registerQuestion = (req, res) => {
     const newQuestion = {
@@ -139,6 +140,15 @@ exports.registerAnswer = async (req, res) => {
         question.answerDate = new Date();
         question.status = 1;
         await question.save();
+
+        // push notification
+        const registeredToken = await getSubTokens(question.userId);
+        console.log(registeredToken)
+
+        await sendNotification([registeredToken], {
+            message: '작성하신 문의에 대한 답변이 완료되었습니다',
+            data: {questionId: questionId, message: '작성하신 문의에 대한 답변이 완료되었습니다'}
+        });
 
         return res.status(200).send({result: 'QUESTION_ANSWER_ADD_SUCCESS'});
 

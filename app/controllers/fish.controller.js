@@ -1122,6 +1122,8 @@ exports.rewarding = async (competition) => {
         }
         await profile.save();
     }
+
+    console.log('******** The end **********')
 }
 
 const getRecordByUser = async (userId) => {

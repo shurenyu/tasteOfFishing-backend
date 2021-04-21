@@ -12,13 +12,12 @@ const Op = db.Sequelize.Op;
 const {getSubTokens, sendNotification} = require("../utils/push-notification");
 const {rewarding} = require("./fish.controller");
 const CHECK_INTERVAL = 60000;
+const aDay = 24 * 3600000;
 
 const validCompetition = (start, end) => {
     const startDate = new Date(start).getTime();
     const endDate = new Date(end).getTime();
     const now = new Date().getTime();
-    console.log(start)
-    console.log(end)
 
     if (startDate > endDate) return false;
     return startDate >= now;
@@ -45,9 +44,6 @@ exports.registerCompetition = async (req, res) => {
         };
 
         const contest = await Competition.create(newCompetition);
-        let rewardJob = null;
-        let startJob = null;
-        let endJob = null;
 
         let tmr = setInterval(async function () {
             const now = new Date().getTime();
@@ -56,64 +52,59 @@ exports.registerCompetition = async (req, res) => {
                 where: {id: contest.id}
             });
 
+            if (!competition) {
+                clearInterval(tmr);
+            }
+
             const endDate = new Date(competition.endDate).getTime();
             const startDate = new Date(competition.startDate).getTime();
 
-            if (now > endDate + 1000) {
+            if (now > endDate + CHECK_INTERVAL) {
+                clearInterval(tmr);
+            } else if (now > endDate + 1000) {
+
                 console.log('the competition finished!!!!!!!!')
                 await rewarding(competition);
                 clearInterval(tmr);
 
-            } else if (endDate - now < CHECK_INTERVAL) {
-                console.log('competition will be finished within 1 min !!!');
-
-                rewardJob = schedule.scheduleJob(endDate, async function () {
-                    await rewarding(competition);
-                    clearInterval(tmr);
-                })
-
-            } else if (endDate - now < 24 * 3600000) {
+            } else if (now >= endDate - aDay && now < endDate - aDay + CHECK_INTERVAL) {
                 console.log('ending  ------------------');
 
-                if (!endJob) {
-                    endJob = schedule.scheduleJob(endDate - 23 * 3600000, async function () {
-                        const userCompetition = await UserCompetition.findAll({
-                            where: {competitionId: competition.id}
-                        });
+                const userCompetition = await UserCompetition.findAll({
+                    where: {competitionId: competition.id}
+                });
 
-                        const userIds = [];
-                        for (const item of userCompetition) {
-                            userIds.push(item.userId);
-                        }
-
-                        const registeredTokens = await getSubTokens(userIds);
-                        await sendNotification([registeredTokens],
-                            {message: '곧 대회가 종료되요!',
-                                data: {competitonId: competition.id, message: '곧 대회가 종료되요!'}});
-
-                    })
+                const userIds = [];
+                for (const item of userCompetition) {
+                    userIds.push(item.userId);
                 }
-            } else if (startDate - now < 24 * 3600000) {
+
+                console.log('곧 대회가 종료되요!')
+
+                const registeredTokens = await getSubTokens(userIds);
+                await sendNotification([registeredTokens],
+                    {message: '곧 대회가 종료되요!',
+                        data: {competitonId: competition.id, message: '곧 대회가 종료되요!'}});
+
+            } else if (now >= startDate - aDay && now < startDate - aDay + CHECK_INTERVAL) {
                 console.log('starting -----------------')
 
-                if (!startJob) {
-                    startJob = schedule.scheduleJob(startDate - 23 * 3600000, async function () {
-                        const userCompetition = await UserCompetition.findAll({
-                            where: {competitionId: competition.id}
-                        });
+                const userCompetition = await UserCompetition.findAll({
+                    where: {competitionId: competition.id}
+                });
 
-                        const userIds = [];
-                        for (const item of userCompetition) {
-                            userIds.push(item.userId);
-                        }
-
-                        const registeredTokens = await getSubTokens(userIds);
-                        await sendNotification([registeredTokens], {
-                            message: '곧 대회가 시작되요!',
-                            data: {competitionId: competition.id, message: '곧 대회가 시작되요!'}
-                        });
-                    })
+                const userIds = [];
+                for (const item of userCompetition) {
+                    userIds.push(item.userId);
                 }
+
+                console.log('곧 대회가 시작되요!')
+
+                const registeredTokens = await getSubTokens(userIds);
+                await sendNotification([registeredTokens], {
+                    message: '곧 대회가 시작되요!',
+                    data: {competitionId: competition.id, message: '곧 대회가 시작되요!'}
+                });
             }
 
         }, CHECK_INTERVAL);
