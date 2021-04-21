@@ -45,6 +45,9 @@ exports.registerCompetition = async (req, res) => {
         };
 
         const contest = await Competition.create(newCompetition);
+        let rewardJob = null;
+        let startJob = null;
+        let endJob = null;
 
         let tmr = setInterval(async function () {
             const now = new Date().getTime();
@@ -64,7 +67,7 @@ exports.registerCompetition = async (req, res) => {
             } else if (endDate - now < CHECK_INTERVAL) {
                 console.log('competition will be finished within 1 min !!!');
 
-                const job = schedule.scheduleJob(endDate, async function () {
+                rewardJob = schedule.scheduleJob(endDate, async function () {
                     await rewarding(competition);
                     clearInterval(tmr);
                 })
@@ -72,40 +75,48 @@ exports.registerCompetition = async (req, res) => {
             } else if (endDate - now < 24 * 3600000) {
                 console.log('ending  ------------------');
 
-                const userCompetition = await UserCompetition.findAll({
-                    where: {competitionId: competition.id}
-                });
+                if (!endJob) {
+                    endJob = schedule.scheduleJob(endDate - 23 * 3600000, async function () {
+                        const userCompetition = await UserCompetition.findAll({
+                            where: {competitionId: competition.id}
+                        });
 
-                const userIds = [];
-                for (const item of userCompetition) {
-                    userIds.push(item.userId);
+                        const userIds = [];
+                        for (const item of userCompetition) {
+                            userIds.push(item.userId);
+                        }
+
+                        const registeredTokens = await getSubTokens(userIds);
+                        await sendNotification([registeredTokens],
+                            {message: '곧 대회가 종료되요!',
+                                data: {competitonId: competition.id, message: '곧 대회가 종료되요!'}});
+
+                    })
                 }
-
-                const registeredTokens = await getSubTokens(userIds);
-                await sendNotification([registeredTokens],
-                    {message: '곧 대회가 종료되요!',
-                        data: {competitonId: competition.id, message: '곧 대회가 종료되요!'}});
-
             } else if (startDate - now < 24 * 3600000) {
                 console.log('starting -----------------')
 
-                const userCompetition = await UserCompetition.findAll({
-                    where: {competitionId: competition.id}
-                });
+                if (!startJob) {
+                    startJob = schedule.scheduleJob(startDate - 23 * 3600000, async function () {
+                        const userCompetition = await UserCompetition.findAll({
+                            where: {competitionId: competition.id}
+                        });
 
-                const userIds = [];
-                for (const item of userCompetition) {
-                    userIds.push(item.userId);
+                        const userIds = [];
+                        for (const item of userCompetition) {
+                            userIds.push(item.userId);
+                        }
+
+                        const registeredTokens = await getSubTokens(userIds);
+                        await sendNotification([registeredTokens], {
+                            message: '곧 대회가 시작되요!',
+                            data: {competitionId: competition.id, message: '곧 대회가 시작되요!'}
+                        });
+                    })
                 }
-
-                const registeredTokens = await getSubTokens(userIds);
-                await sendNotification([registeredTokens], {
-                    message: '곧 대회가 시작되요!',
-                    data: {competitionId: competition.id, message: '곧 대회가 시작되요!'}
-                });
             }
 
-        }, CHECK_INTERVAL)
+        }, CHECK_INTERVAL);
 
         return res.status(200).send({result: 'COMPETITION.REGISTER', data: contest.id});
     } catch (err) {
@@ -186,16 +197,50 @@ exports.getCompetitionById = async (req, res) => {
             where: {competitionId: competitionId}
         });
 
-        const sortingKey = ['DESC', 'DESC', 'DESC', 'DESC', 'ASC'];
+        // const sortingKey = ['DESC', 'DESC', 'DESC', 'DESC', 'ASC'];
+        //
+        // let winners = [];
+        // if (competition.mode > 0) {
+        //     winners = await UserCompetition.findAll({
+        //         limit: 3,
+        //         order: [[`record${competition.mode}`, sortingKey[competition.mode - 1]]],
+        //         attributes: ['id', `record${competition.mode}`, 'image'],
+        //         where: {
+        //             competitionId: competitionId,
+        //         },
+        //         include: [{
+        //             model: User,
+        //             attributes: ['id', 'name'],
+        //             include: [{
+        //                 model: Profile,
+        //                 attributes: ['id', 'username', 'level', 'avatar'],
+        //                 include: [{
+        //                     model: UserStyle
+        //                 }]
+        //             }]
+        //         }]
+        //     });
+        // }
+
+
+        const norm = competition.questSpecialWidth || 10000;
+
+        let order = (competition.mode !== 5)
+            ? [[`record${competition.mode}`, 'DESC']]
+            : [[db.sequelize.fn('ABS', db.sequelize.literal('record5 - ' + norm)), 'ASC']];
 
         let winners = [];
+
         if (competition.mode > 0) {
             winners = await UserCompetition.findAll({
                 limit: 3,
-                order: [[`record${competition.mode}`, sortingKey[competition.mode - 1]]],
+                order: order,
                 attributes: ['id', `record${competition.mode}`, 'image'],
                 where: {
                     competitionId: competitionId,
+                    // [`record${competition.mode}`]: {
+                    //     [Op.gt]: 0,
+                    // },
                 },
                 include: [{
                     model: User,
@@ -206,8 +251,10 @@ exports.getCompetitionById = async (req, res) => {
                         include: [{
                             model: UserStyle
                         }]
-                    }]
-                }]
+                    }],
+                    required: true,
+                }],
+                required: false,
             });
         }
 
@@ -531,7 +578,7 @@ exports.getCompetitionRanking = async (req, res) => {
             where: {id: competitionId}
         });
 
-        const norm = competition.questSpecialWidth;
+        const norm = competition.questSpecialWidth || 10000;
 
         let order = (competition.mode !== 5)
             ? [[`record${competition.mode}`, 'DESC']]
@@ -559,8 +606,9 @@ exports.getCompetitionRanking = async (req, res) => {
                         include: [{
                             model: UserStyle
                         }]
-                    }]
-                }]
+                    }],
+                    required: true,
+                }],
             });
         }
         const myRanking = data.findIndex(x => x.user.id === req.body.userId);
