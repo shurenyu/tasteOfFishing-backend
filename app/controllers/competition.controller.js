@@ -164,22 +164,6 @@ exports.getCompetitionTerms = (req, res) => {
     })
 }
 
-// exports.getCompetitionById = async (req, res) => {
-//     const competitionId = req.body.competitionId;
-//
-//     const cntUser = await Diary.count({
-//         where: {id: competitionId}
-//     });
-//
-//     Competition.findOne({
-//         where: {id: competitionId}
-//     }).then(async data => {
-//         return res.status(200).send({result: {...data.dataValues, userCount: cntUser}});
-//     }).catch(err => {
-//         return res.status(500).send({msg: err.toString()});
-//     })
-// };
-
 exports.getCompetitionById = async (req, res) => {
     try {
         const competitionId = req.body.competitionId;
@@ -196,32 +180,6 @@ exports.getCompetitionById = async (req, res) => {
         const cntUser = await UserCompetition.count({
             where: {competitionId: competitionId}
         });
-
-        // const sortingKey = ['DESC', 'DESC', 'DESC', 'DESC', 'ASC'];
-        //
-        // let winners = [];
-        // if (competition.mode > 0) {
-        //     winners = await UserCompetition.findAll({
-        //         limit: 3,
-        //         order: [[`record${competition.mode}`, sortingKey[competition.mode - 1]]],
-        //         attributes: ['id', `record${competition.mode}`, 'image'],
-        //         where: {
-        //             competitionId: competitionId,
-        //         },
-        //         include: [{
-        //             model: User,
-        //             attributes: ['id', 'name'],
-        //             include: [{
-        //                 model: Profile,
-        //                 attributes: ['id', 'username', 'level', 'avatar'],
-        //                 include: [{
-        //                     model: UserStyle
-        //                 }]
-        //             }]
-        //         }]
-        //     });
-        // }
-
 
         const norm = competition.questSpecialWidth || 10000;
 

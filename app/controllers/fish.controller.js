@@ -756,29 +756,6 @@ exports.getFishesByMultiFilter = async (req, res) => {
             }]
         });
 
-        // const totalCount = await Fish.count();
-
-        // const fishes = await Fish.findAll({
-        //     // order: [[order === 0 ? 'registerDate' : 'fishWidth', 'DESC']],
-        //     order: [['fishWidth', 'DESC']],
-        //     where: filter,
-        //     include: [{
-        //         model: User,
-        //         attributes: ['id', 'name'],
-        //         include: [{
-        //             model: Profile,
-        //             attributes: ['id', 'username']
-        //         }]
-        //     }, {
-        //         model: Competition,
-        //         attributes: ['id', 'name']
-        //     }, {
-        //         model: FishType,
-        //         attributes: ['id', 'name']
-        //     }]
-        //
-        // });
-
         return res.status(200).send({result: fishes, totalCount: totalCount});
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
@@ -868,45 +845,6 @@ exports.deleteFishAndUpdateReport = async (req, res) => {
         return res.status(500).send({msg: err.toString()});
     }
 }
-
-
-// exports.getRankingRealtime = async (req, res) => {
-//     let filter = {};
-//     if (req.body.fishTypeId !== 0) filter.fishTypeId = req.body.fishTypeId;
-//     const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY record DESC))');
-//
-//     try {
-//         const userRankings = await UserRecord.findAll({
-//             limit: req.body.limit || 1000000,
-//             offset: req.body.offset || 0,
-//             where: filter,
-//             // attributes: ['id', 'record', [rank, 'rank']],
-//             attributes: ['id', 'userId', 'record'],
-//             order: [['record', 'DESC']],
-//             include: [{
-//                 model: Fish,
-//                 attributes: ['id'],
-//                 include: [{
-//                     model: User,
-//                     attributes: ['id', 'name'],
-//                 }, {
-//                     model: FishType,
-//                     attributes: ['id', 'name'],
-//                 }, {
-//                     model: FishImage,
-//                     limit: 1,
-//                     attributes: ['id', 'image'],
-//                 }]
-//             }],
-//         });
-//
-//         const idx = userRankings.findIndex(x=> x.userId === req.body.userId);
-//         const myFish = idx > -1 ? userRankings[idx] : null;
-//         return res.status(200).send({result: userRankings, myRanking: idx + 1, myFish: myFish});
-//     } catch (err) {
-//         return res.status(500).send({msg: err.toString()});
-//     }
-// }
 
 exports.getRankingRealtime = async (req, res) => {
     const limit = req.body.limit || 100000;

@@ -136,7 +136,7 @@ exports.getReportByFilter = (req, res) => {
     Report.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
-        order: [['createdDate', 'ASC']],
+        order: [['createdDate', 'DESC']],
         where: filter,
         include: [{
             model: User,
