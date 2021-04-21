@@ -70,6 +70,7 @@ exports.registerCompetition = async (req, res) => {
                 })
 
             } else if (endDate - now < 24 * 3600000) {
+                console.log('ending  ------------------');
 
                 const userCompetition = await UserCompetition.findAll({
                     where: {competitionId: competition.id}
@@ -86,6 +87,7 @@ exports.registerCompetition = async (req, res) => {
                         data: {competitonId: competition.id, message: '곧 대회가 종료되요!'}});
 
             } else if (startDate - now < 24 * 3600000) {
+                console.log('starting -----------------')
 
                 const userCompetition = await UserCompetition.findAll({
                     where: {competitionId: competition.id}
@@ -594,7 +596,7 @@ exports.getCompetitionOverview = async (req, res) => {
                 limit: limit,
                 offset: offset,
                 order: order,
-                attributes: ['id', `record${competition.mode}`, 'image'],
+                attributes: ['id', 'userId', `record${competition.mode}`, 'image'],
                 where: {
                     competitionId: competitionId,
                 },

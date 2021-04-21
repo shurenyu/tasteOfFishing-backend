@@ -1,6 +1,7 @@
 const db = require("../models");
 const User = db.user;
 const Profile = db.profile;
+const Fish = db.fish;
 // const Diary = db.diary;
 const UserStyle = db.userStyle;
 const FishType = db.fishType;
@@ -427,14 +428,18 @@ const getRecordByUser = async (userId) => {
     let rankChampionshipCount = 0;
     let questChampionshipCount = 0;
 
+    totalDiaryCount = await Fish.count({
+        where: {
+            userId: userId
+        }
+    });
+
     const myCompetitions = await UserCompetition.findAll({
         where: {userId: userId},
         include: [{
             model: Competition,
         }]
     });
-
-    totalDiaryCount = myCompetitions.length;
 
     for (const item of myCompetitions) {
         if (item.competition && item.competition.mode === 1) {

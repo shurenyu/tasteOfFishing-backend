@@ -9,8 +9,8 @@ module.exports = (sequelize, Sequelize) => {
         description: {
             type: Sequelize.STRING(1200)
         },
-        image: {
-            type: Sequelize.STRING(256)
+        images: {
+            type: Sequelize.STRING(1200)
         },
         startDate: {
             type: Sequelize.DATE,

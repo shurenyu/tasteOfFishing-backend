@@ -721,11 +721,13 @@ exports.getFishesByMultiFilter = async (req, res) => {
         const competitionId = req.body.competitionId;
         const status = req.body.status;
         const order = req.body.order;
+        const userId = req.body.userId;
 
         let filter = {};
 
         if (competitionId) filter.competitionId = competitionId;
         if (status) filter.status = status;
+        if (userId) filter.userId = userId;
 
         const orderList = order === 0 ? [['registerDate', 'DESC']] : [['fishWidth', 'DESC']]
 
@@ -1191,14 +1193,16 @@ const getRecordByUser = async (userId) => {
     let rankChampionshipCount = 0;
     let questChampionshipCount = 0;
 
+    totalDiaryCount = await Fish.count({
+        where: {userId: userId}
+    });
+
     const myCompetitions = await UserCompetition.findAll({
         where: {userId: userId},
         include: [{
             model: Competition,
         }]
     });
-
-    totalDiaryCount = myCompetitions.length;
 
     for (const item of myCompetitions) {
         if (item.competition && item.competition.mode === 1) {
