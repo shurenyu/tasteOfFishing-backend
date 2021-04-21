@@ -301,6 +301,8 @@ exports.registerPostComment = (req, res) => {
             }
             const registeredToken = await getSubTokens(post.userId);
 
+            console.log('작성하신 게시물에 댓글이 달렸습니다')
+
             return sendNotification([registeredToken], {
                 message: '작성하신 게시물에 댓글이 달렸습니다',
                 data: {postId: post.id, message: '작성하신 게시물에 댓글이 달렸습니다'}
