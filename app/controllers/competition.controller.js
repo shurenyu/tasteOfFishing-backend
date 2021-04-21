@@ -37,7 +37,7 @@ exports.registerCompetition = async (req, res) => {
     // }
 
     try {
-        const newCompetition = req.body.type === 0 ? {
+        const newCompetition = req.body.type === 1 ? {
             ...req.body,
         } : {
             ...req.body,
