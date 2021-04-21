@@ -19,6 +19,7 @@ const fetch = require('node-fetch');
 
 exports.sendNotification = async (tokens, data) => {
 	let token_array  = [...new Set(tokens)];
+	console.log(token_array)
 	// notification object with title and text
 	const notification = {
 		click_action: 'FISHING_TASTE_CLICK_ACTION',

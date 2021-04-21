@@ -125,7 +125,7 @@ exports.deleteBanner = (req, res) => {
 };
 
 exports.registerTokenForPush = async (req, res) => {
-    const userId = req.body.userId;
+    const userId = req.body.userId || 0;
     const token = req.body.token;
 
     try {
