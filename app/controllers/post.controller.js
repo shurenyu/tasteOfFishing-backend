@@ -279,6 +279,8 @@ exports.registerPostComment = (req, res) => {
         createdDate: new Date(),
     }
 
+    console.log(data)
+
     PostComment.create(data)
         .then(async (data) => {
             const profile = await Profile.findOne({
@@ -294,8 +296,11 @@ exports.registerPostComment = (req, res) => {
             const post = await Post.findOne({
                 where: {id: req.body.postId}
             });
-            const owner = post.userId;
-            const registeredToken = await getSubTokens(owner.id);
+            if (!post) {
+                return res.status(404).send({msg: 'POST_NOT_FOUND'});
+            }
+            const registeredToken = await getSubTokens(post.userId);
+
             return sendNotification([registeredToken], {
                 message: '작성하신 게시물에 댓글이 달렸습니다',
                 data: {postId: post.id, message: '작성하신 게시물에 댓글이 달렸습니다'}
