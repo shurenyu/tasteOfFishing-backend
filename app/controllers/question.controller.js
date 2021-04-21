@@ -145,7 +145,7 @@ exports.registerAnswer = async (req, res) => {
         const registeredToken = await getSubTokens(question.userId);
         console.log(registeredToken)
 
-        await sendNotification([registeredToken], {
+        await sendNotification(registeredToken, {
             message: '작성하신 문의에 대한 답변이 완료되었습니다',
             data: {questionId: questionId, message: '작성하신 문의에 대한 답변이 완료되었습니다'}
         });
