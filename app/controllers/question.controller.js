@@ -45,6 +45,7 @@ exports.getQuestionsByFilter = (req, res) => {
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
         where: filter,
+        order: [['questionDate', 'DESC']],
         include: [{
             model: User,
             attributes: ['id', 'name'],

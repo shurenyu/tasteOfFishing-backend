@@ -82,7 +82,7 @@ exports.registerCompetition = async (req, res) => {
                 console.log('곧 대회가 종료되요!')
 
                 const registeredTokens = await getSubTokens(userIds);
-                await sendNotification([registeredTokens],
+                await sendNotification(registeredTokens,
                     {message: '곧 대회가 종료되요!',
                         data: {competitonId: competition.id, message: '곧 대회가 종료되요!'}});
 
@@ -101,7 +101,7 @@ exports.registerCompetition = async (req, res) => {
                 console.log('곧 대회가 시작되요!')
 
                 const registeredTokens = await getSubTokens(userIds);
-                await sendNotification([registeredTokens], {
+                await sendNotification(registeredTokens, {
                     message: '곧 대회가 시작되요!',
                     data: {competitionId: competition.id, message: '곧 대회가 시작되요!'}
                 });
