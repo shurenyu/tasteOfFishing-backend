@@ -61,10 +61,12 @@ exports.getAllTokens = async () => {
 }
 
 exports.getSubTokens = async (userIds) => {
-	return await PushToken.findAll({
+	const temp = await PushToken.findAll({
 		limit: 500,
 		where: {
 			userId: userIds,
 		}
 	});
+
+	return temp.map(x => (x.token));
 }
