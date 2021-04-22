@@ -159,6 +159,7 @@ exports.getAllUsers = async (req, res) => {
         const users = await User.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
+            order: [['createdDate', 'DESC']],
             where: {
                 type: {[Op.gt]: 0}
             },

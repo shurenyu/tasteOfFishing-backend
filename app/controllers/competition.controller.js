@@ -39,6 +39,7 @@ exports.registerCompetition = async (req, res) => {
     try {
         const newCompetition = req.body.type === 1 ? {
             ...req.body,
+            needApplication: 0,
         } : {
             ...req.body,
             needApplication: 1,
