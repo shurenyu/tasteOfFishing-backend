@@ -13,6 +13,7 @@ const {getSubTokens, sendNotification} = require("../utils/push-notification");
 const {rewarding} = require("./fish.controller");
 const CHECK_INTERVAL = 60000;
 const aDay = 24 * 3600000;
+// const aDay = 3 * 60000;
 
 const validCompetition = (start, end) => {
     const startDate = new Date(start).getTime();
@@ -84,7 +85,7 @@ exports.registerCompetition = async (req, res) => {
                 const registeredTokens = await getSubTokens(userIds);
                 await sendNotification(registeredTokens,
                     {message: '곧 대회가 종료되요!',
-                        data: {competitonId: competition.id, message: '곧 대회가 종료되요!'}});
+                        data: {competitionId: competition.id, message: '곧 대회가 종료되요!'}});
 
             } else if (now >= startDate - aDay && now < startDate - aDay + CHECK_INTERVAL) {
                 console.log('starting -----------------')
