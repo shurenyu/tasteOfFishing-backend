@@ -7,6 +7,7 @@ const filesRouter = require("./app/file_upload.routes");
 const eventRouter = require("./app/controllers/event.controller");
 const {rewarding} = require("./app/controllers/fish.controller");
 const schedule = require('node-schedule');
+const {getSubTokens, sendNotification} = require("./app/utils/push-notification");
 
 // cors policy
 const corsOptions = {
@@ -43,37 +44,65 @@ app.get("/", (req, res) => {
     res.json({msg: ["Welcome to fishing app"]});
 });
 
-const now = new Date().getTime()
-const CHECK_INTERVAL = 60000;
+// const now = new Date().getTime()
+// const CHECK_INTERVAL = 60000;
+//
+// db.competition.findAll({
+//     where: {
+//         endDate: {
+//             [Op.gt]: now
+//         }
+//     }
+// }).then(data => {
+//     console.log('ee:', data.length)
+//     for (const competition of data) {
+//         let tmr = setInterval(async function () {
+//             const endDate = new Date(competition.endDate).getTime();
+//             const startDate = new Date(competition.startDate).getTime();
+//
+//             if (now > endDate + 1000) {
+//                 console.log('the competition finished!!!!!!!!')
+//                 await rewarding(competition);
+//                 clearInterval(tmr);
+//
+//             } else if (endDate - now < CHECK_INTERVAL) {
+//                 console.log('competition will be finished within 1 min !!!');
+//
+//                 const job = schedule.scheduleJob(endDate, async function () {
+//                     await rewarding(competition);
+//                     clearInterval(tmr);
+//                 })
+//             }
+//         }, CHECK_INTERVAL)
+//     }
+// })
 
-db.competition.findAll({
-    where: {
-        endDate: {
-            [Op.gt]: now
-        }
-    }
-}).then(data => {
-    for (const competition of data) {
-        let tmr = setInterval(async function () {
-            const endDate = new Date(competition.endDate).getTime();
-            const startDate = new Date(competition.startDate).getTime();
+// const CHECK_INTERVAL = 24 * 3600000;
+const CHECK_INTERVAL = 24 * 3600000;
+const DELTA = 7 * 24 * 3600000;
 
-            if (now > endDate + 1000) {
-                console.log('the competition finished!!!!!!!!')
-                await rewarding(competition);
-                clearInterval(tmr);
 
-            } else if (endDate - now < CHECK_INTERVAL) {
-                console.log('competition will be finished within 1 min !!!');
-
-                const job = schedule.scheduleJob(endDate, async function () {
-                    await rewarding(competition);
-                    clearInterval(tmr);
-                })
+let tmr = setInterval(async function () {
+    db.user.findAll({
+        attributes: ['id'],
+        where: {
+            updatedDate: {
+                [Op.lt]: new Date().getTime() - DELTA,
             }
-        }, CHECK_INTERVAL)
-    }
-})
+        }
+    }).then(async users => {
+        const userIds = users.map(x => (x.id));
+
+        const registeredTokens = await getSubTokens(userIds);
+        console.log('tokens: ', registeredTokens);
+        await sendNotification(registeredTokens, {
+            message: '낚시의맛을 이용하신지 1주일이 넘었어요!',
+            data: {home: 1, message: '낚시의맛을 이용하신지 1주일이 넘었어요!'}
+        });
+    }).catch(err => {
+        console.log(err);
+    })
+}, CHECK_INTERVAL);
 
 // routes
 require('./app/routes/auth.routes')(app);

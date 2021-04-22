@@ -911,8 +911,24 @@ exports.addFishComment = (req, res) => {
     }
 
     DiaryComment.create(newComment)
-        .then(data => {
-            return res.status(200).send({result: 'DIARY_COMMENT_REGISTER_SUCCESS', data: data});
+        .then(async data => {
+            res.status(200).send({result: 'DIARY_COMMENT_REGISTER_SUCCESS', data: data});
+
+            const fish = await Fish.findOne({
+                where: {id: req.body.fishId}
+            });
+            if (!fish) {
+                return res.status(404).send({msg: 'POST_NOT_FOUND'});
+            }
+            const registeredToken = await getSubTokens(fish.userId);
+
+            console.log('등록하신 물고기에 댓글이 달렸습니다')
+
+            return sendNotification(registeredToken, {
+                message: '등록하신 물고기에 댓글이 달렸습니다',
+                data: {fishId: fish.id, message: '등록하신 물고기에 댓글이 달렸습니다'}
+            });
+
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});

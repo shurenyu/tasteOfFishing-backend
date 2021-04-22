@@ -90,12 +90,12 @@ exports.registerCompetition = async (req, res) => {
             } else if (now >= startDate - aDay && now < startDate - aDay + CHECK_INTERVAL) {
                 console.log('starting -----------------')
 
-                const userCompetition = await UserCompetition.findAll({
+                const appliedUsers = await UserApplication.findAll({
                     where: {competitionId: competition.id}
                 });
 
                 const userIds = [];
-                for (const item of userCompetition) {
+                for (const item of appliedUsers) {
                     userIds.push(item.userId);
                 }
 
