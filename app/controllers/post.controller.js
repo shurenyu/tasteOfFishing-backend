@@ -111,6 +111,7 @@ exports.getPostById = (req, res) => {
             model: PostImage,
         }, {
             model: PostComment,
+            order: [['createdDate', 'DESC']],
             include: [{
                 model: PostCommentReply,
             }, {

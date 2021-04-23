@@ -32,9 +32,9 @@ const validCompetition = (start, end) => {
  * @returns {token}
  */
 exports.registerCompetition = async (req, res) => {
-    // if (!validCompetition(req.body.startDate, req.body.endDate)) {
-    //     return res.status(400).send({result: 'INVALID_DATE'});
-    // }
+    if (!validCompetition(req.body.startDate, req.body.endDate)) {
+        return res.status(400).send({msg: 'INVALID_DATE'});
+    }
 
     try {
         const newCompetition = req.body.type === 1 ? {
@@ -132,6 +132,9 @@ exports.updateCompetition = async (req, res) => {
 
         const keys = Object.keys(req.body);
         for (const key of keys) {
+            if (key === 'endDate' && new Date(req.body[key]).getTime() <= new Date().getTime()) {
+                return res.status(400).send({msg: 'INVALID_DATE'});
+            }
             if (key !== 'competitionId') {
                 competition[key] = req.body[key];
             }
