@@ -523,6 +523,7 @@ exports.getFishesByUser = (req, res) => {
     let filter = {
         userId: req.body.userId,
         competitionId: req.body.competitionId,
+        disabled: 0,
     };
 
     if (req.body.accepted === 1) {
@@ -564,7 +565,8 @@ exports.getDiariesByUser = (req, res) => {
         order: [[sortKey === 1 ? 'fishWidth' : 'registerDate', 'DESC'], [FishImage, 'imageType', 'ASC']],
         where: {
             userId: userId,
-            status: 1
+            status: 1,
+            disabled: 0,
         },
         include: [{
             model: FishType,
@@ -603,7 +605,8 @@ exports.searchDiary = (req, res) => {
         order: [['fishWidth', 'DESC'], [FishImage, 'imageType', 'ASC']],
         where: {
             userId: userId,
-            status: 1
+            status: 1,
+            disabled: 0,
         },
         include: [{
             model: FishType,
@@ -632,7 +635,8 @@ exports.getFishesByCompetition = (req, res) => {
         offset: req.body.offset || 0,
         where: {
             competitionId: competitionId,
-            status: 1
+            status: 1,
+            disabled: 0,
         },
         include: [{
             model: FishType,
@@ -652,7 +656,7 @@ exports.getFishById = (req, res) => {
     const fishId = req.body.fishId;
 
     Fish.findOne({
-        where: {id: fishId},
+        where: {id: fishId, disabled: 0},
         include: [{
             model: User,
             attributes: ['id', 'name']
@@ -693,6 +697,7 @@ exports.getAllFishes = async (req, res) => {
         const fishes = await Fish.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
+            where: {disabled: 0},
             order: [['fishWidth', 'DESC'], [FishImage, 'imageType', 'ASC']],
             include: [{
                 model: User,
@@ -723,7 +728,7 @@ exports.getFishesByMultiFilter = async (req, res) => {
         const order = req.body.order;
         const userId = req.body.userId;
 
-        let filter = {};
+        let filter = {disabled: 0};
 
         if (competitionId) filter.competitionId = competitionId;
         if (status) filter.status = status;
@@ -766,7 +771,8 @@ exports.updateFish = async (req, res) => {
     try {
         const fish = await Fish.findOne({
             where: {
-                id: req.body.fishId
+                id: req.body.fishId,
+                disabled: 0
             }
         });
 
@@ -829,9 +835,12 @@ exports.deleteFishAndUpdateReport = async (req, res) => {
     const fishId = req.body.fishId;
 
     try {
-        await Fish.destroy({
+        const fish = await Fish.findOne({
             where: {id: fishId}
         });
+
+        fish.disabled = 1;
+        await fish.save();
 
         const report = await Report.findOne({
             where: {id: reportId}
@@ -867,7 +876,8 @@ exports.getRankingRealtime = async (req, res) => {
                 o.id,
                 o.fishWidth,
                 o.fishTypeId,
-                o.userId
+                o.userId,
+                o.disabled
             FROM
                 fishes o
             LEFT JOIN fishes b ON o.userId = b.userId
@@ -879,7 +889,7 @@ exports.getRankingRealtime = async (req, res) => {
         LEFT JOIN userStyles ust ON ust.id = p.userStyleId
         JOIN fishImages fi ON fi.fishId = x.id
         JOIN fishTypes ft ON ft.id = x.fishTypeId
-        WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'} AND fi.imageType = 1
+        WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'} AND fi.imageType = 1 AND x.disabled = 0
         ORDER BY x.fishWidth DESC
     `);
 
@@ -915,7 +925,7 @@ exports.addFishComment = (req, res) => {
             res.status(200).send({result: 'DIARY_COMMENT_REGISTER_SUCCESS', data: data});
 
             const fish = await Fish.findOne({
-                where: {id: req.body.fishId}
+                where: {id: req.body.fishId, disabled: 0}
             });
             if (!fish) {
                 return res.status(404).send({msg: 'POST_NOT_FOUND'});
@@ -1034,16 +1044,19 @@ exports.rewarding = async (competition) => {
     if (competition.mode === 1 || competition.mode === 5) {
         console.log('-------------testing--------------', competition.mode)
         const [winners, metadata] = await db.sequelize.query(`
-                    SELECT *,
-                    (
-                        SELECT 1+ count(*)
-                        FROM userCompetitions uc1
-                        WHERE competitionId = ${competition.id} AND ${competition.mode === 1 ? 'uc1.record1 > uc.record1' : 'uc1.record5 < uc.record5'}
-                    ) as rank
-                    FROM userCompetitions uc
-                    HAVING competitionId = ${competition.id} AND rank < 4
-                    ORDER BY uc.record${competition.mode} DESC
-                `);
+            SELECT *,
+            (
+                SELECT 1+ count(*)
+                FROM userCompetitions uc1
+                WHERE competitionId = ${competition.id} AND 
+                    ${competition.mode === 1
+                        ? 'uc1.record1 > uc.record1' 
+                        : `ABS(uc1.record5 - ${competition.questSpecialWidth}) < ABS(uc.record5 - ${competition.questSpecialWidth}) `}
+            ) as rank
+            FROM userCompetitions uc
+            HAVING competitionId = ${competition.id} AND rank < 4 AND record${competition.mode} > 0
+            ORDER BY rank ASC
+        `);
 
         winners1 = winners.filter(x => x.rank === 1);
         winners2 = winners.filter(x => x.rank === 2);

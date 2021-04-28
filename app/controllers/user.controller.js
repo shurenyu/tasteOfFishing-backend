@@ -37,6 +37,13 @@ exports.registerProfile = async (req, res) => {
             createdDate: new Date(),
         });
 
+        await UserPoint.create({
+            userId: user.id,
+            content: '출석보상',
+            point: 30,
+            createdDate: new Date(),
+        });
+
         const userInfo = await User.findOne({
             where: {id: req.body.userId},
             attributes: {

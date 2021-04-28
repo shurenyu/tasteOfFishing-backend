@@ -16,6 +16,7 @@ exports.registerPost = async (req, res) => {
             userId: req.body.userId,
             link: req.body.link || '',
             content: req.body.content,
+            disabled: 0,
             createdDate: new Date(),
         });
 
@@ -60,14 +61,17 @@ exports.getPostByUser = async (req, res) => {
         const userId = req.body.userId;
 
         const count = await Post.count({
-            where: {userId: userId}
+            where: {
+                userId: userId,
+                disabled: 0,
+            }
         });
 
         const data = await Post.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
             order: [['createdDate', 'DESC']],
-            where: {userId: userId},
+            where: {userId: userId, disabled: 0},
             include: [{
                 model: User,
                 attributes: ['id', 'name', 'type'],
@@ -99,7 +103,7 @@ exports.getPostByUser = async (req, res) => {
 exports.getPostById = (req, res) => {
     const postId = parseInt(req.body.postId);
     Post.findOne({
-        where: {id: postId},
+        where: {id: postId, disabled: 0},
         include: [{
             model: User,
             attributes: ['id', 'name', 'type'],
@@ -135,6 +139,7 @@ exports.getAllPosts = (req, res) => {
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
         order: [['createdDate', 'DESC']],
+        where: {disabled: 0},
         include: [{
             model: User,
             attributes: ['id', 'name', 'type'],
@@ -167,19 +172,19 @@ exports.searchPosts = async (req, res) => {
             INNER JOIN users ON users.id = posts.userId
             INNER JOIN profiles ON users.id = profiles.userId
             LEFT JOIN postImages ON postImages.postId = posts.id
-            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username LIKE '%${keyword}%'
+            WHERE (users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username LIKE '%${keyword}%') AND posts.disabled = 0
             ORDER BY createdDate DESC
             LIMIT ${req.body.limit || 1000000}
             OFFSET ${req.body.offset || 0}
         `);
 
         const [count, metadata2] = await db.sequelize.query(`
-            SELECT COUNT(posts.id) AS count
+            SELECT COUNT(*) AS count
             FROM posts 
             INNER JOIN users ON users.id = posts.userId
             INNER JOIN profiles ON users.id = profiles.userId
             LEFT JOIN postImages ON postImages.postId = posts.id
-            WHERE users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username like '%${keyword}%'
+            WHERE (users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username like '%${keyword}%') AND posts.disabled = 0
         `)
 
         let result = [];
@@ -442,9 +447,12 @@ exports.deletePostAndUpdateReport = async (req, res) => {
     const postId = req.body.postId;
 
     try {
-        await Post.destroy({
+        const post = await Post.findOne({
             where: {id: postId}
         });
+
+        post.disabled = 1;
+        await post.save();
 
         const report = await Report.findOne({
             where: {id: reportId}

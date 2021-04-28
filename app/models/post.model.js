@@ -10,6 +10,10 @@ module.exports = (sequelize, Sequelize) => {
         content: {
             type: Sequelize.TEXT
         },
+        disabled: {
+            type: Sequelize.INTEGER(4),
+            defaultValue: 0,
+        },
         createdDate: {
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW
