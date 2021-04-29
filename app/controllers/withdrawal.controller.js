@@ -147,6 +147,7 @@ exports.cancelWithdrawal = async (req, res) => {
 
         await Withdrawal.destroy({
             where: {
+                id: req.body.id,
                 userId: req.body.userId,
                 status: 0,
             }
