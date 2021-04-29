@@ -55,7 +55,7 @@ const updateRecordAndSendMessage = async (fish, images) => {
                     FROM (
                         SELECT f.fishWidth
                         FROM fishes f
-                        WHERE f.userId = 100 AND f.competitionId = 120
+                        WHERE f.userId = ${fish.userId} AND f.competitionId = ${fish.competitionId}
                         ORDER BY f.fishWidth DESC
                         LIMIT ${competition.rankFishNumber}
                     ) as h
@@ -839,15 +839,21 @@ exports.deleteFishAndUpdateReport = async (req, res) => {
             where: {id: fishId}
         });
 
-        fish.disabled = 1;
-        await fish.save();
+        if (fish) {
+            fish.disabled = 1;
+            await fish.save();
+
+            await updateRecords(fish);
+        }
 
         const report = await Report.findOne({
             where: {id: reportId}
         });
 
-        report.status = 2;
-        await report.save();
+        if (report) {
+            report.status = 2;
+            await report.save();
+        }
 
         return res.status(200).send({result: 'SUCCESS'});
     } catch (err) {
@@ -1212,4 +1218,120 @@ const getRecordByUser = async (userId) => {
         rankChampionshipCount,
         questChampionshipCount,
     };
+}
+
+const updateRecords = async (fish) => {
+    /* update the record of userCompetition */
+
+    try {
+        const competition = await Competition.findOne({
+            where: {
+                id: fish.competitionId
+            }
+        });
+
+        const filter = {
+            userId: fish.userId,
+            competitionId: fish.competitionId,
+        }
+
+        const userCompetition = await UserCompetition.findOne({
+            where: filter
+        });
+
+        if (userCompetition !== null) {
+
+            if (competition.mode === 1) {
+
+                const [record, metadata] = await db.sequelize.query(`
+                    SELECT SUM(h.fishWidth) as maxsum
+                    FROM (
+                        SELECT f.fishWidth
+                        FROM fishes f
+                        WHERE f.userId = ${fish.userId} AND f.competitionId = ${fish.competitionId} AND disabled = 0
+                        ORDER BY f.fishWidth DESC
+                        LIMIT ${competition.rankFishNumber}
+                    ) as h
+                `);
+                userCompetition.record1 = record[0]['maxsum'];
+                await userCompetition.save();
+
+            } else if (competition.mode === 2) {
+                const maxFish = await Fish.findAll({
+                    limit: 1,
+                    order: [['fishWidth', 'DESC']],
+                    where: {
+                        userId: fish.userId,
+                        competitionId: fish.competitionId,
+                        disabled: 0,
+                        fishWidth: {[Op.gte]: fish.questFishWidth}
+                    },
+                    include: [{
+                        model: FishImage
+                    }]
+                });
+                userCompetition.record2 = maxFish[0].fishWidth;
+                userCompetition.image = maxFish[0].fishImages &&
+                    maxFish[0].fishImages.find(x => x.imageType === 1) &&
+                    maxFish[0].fishImages.find(x => x.imageType === 1).image;
+
+                await userCompetition.save();
+
+            } else if (competition.mode === 3) {
+
+                userCompetition.record3 = await Fish.count({
+                    where: {
+                        userId: fish.userId,
+                        competitionId: fish.competitionId,
+                        disabled: 0,
+                    },
+                });
+
+                await userCompetition.save();
+
+            } else if (competition.mode === 4) {
+
+                userCompetition.record4 = await Fish.count({
+                    where: {
+                        userId: fish.userId,
+                        competitionId: fish.competitionId,
+                        disabled: 0,
+                        fishWidth: {[Op.gte]: fish.questFishWidth}
+                    },
+                });
+
+                await userCompetition.save();
+
+            } else if (competition.mode === 5) {
+
+                const norm = competition.questSpecialWidth || 1000;
+                const order = [[db.sequelize.fn('ABS', db.sequelize.literal('fishWidth - ' + norm)), 'ASC']];
+
+                const winFish = await Fish.findAll({
+                    limit: 1,
+                    order: order,
+                    where: {
+                        userId: fish.userId,
+                        competitionId: fish.competitionId,
+                        disabled: 0,
+                    },
+                    include: [{
+                        model: FishImage
+                    }]
+                })
+
+                userCompetition.record5 = winFish[0].fishWidth;
+                userCompetition.image = winFish[0].fishImages &&
+                    winFish[0].fishImages.find(x => x.imageType === 1) &&
+                    winFish[0].fishImages.find(x => x.imageType === 1).image;
+
+                await userCompetition.save();
+
+            }
+        }
+
+        return 1;
+    } catch (err) {
+        return 0
+    }
 }

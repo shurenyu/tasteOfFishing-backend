@@ -5,6 +5,63 @@ const User = db.user;
 const AccountType = db.accountType;
 const UserPoint = db.userPoint;
 
+
+/**
+ *
+ * @param userId
+ * @param amount
+ * @param action
+ *          0-SUBTRACT
+ *          1-ADD
+ * @param content
+ * @returns {Promise<string>}
+ */
+exports.updatePoint = async (userId, amount, action, content) => {
+    try {
+        const profile = await Profile.findOne({
+            where: {userId: userId}
+        });
+
+        if (profile) {
+            profile.pointAmount = action === 1 ? profile.pointAmount + amount : profile.pointAmount - amount;
+            await profile.save();
+
+            await UserPoint.create({
+                userId: userId,
+                content: content,
+                point: action === 1 ? amount : -amount,
+                createdDate: new Date(),
+            });
+        }
+        return 'success';
+    } catch (err) {
+        return err.toString();
+    }
+}
+
+const updatePointAmount = async (userId, amount, action, content) => {
+    try {
+        const profile = await Profile.findOne({
+            where: {userId: userId}
+        });
+
+        if (profile) {
+            profile.pointAmount = action === 1 ? profile.pointAmount + amount : profile.pointAmount - amount;
+            await profile.save();
+
+            await UserPoint.create({
+                userId: userId,
+                content: content,
+                point: action === 1 ? amount : -amount,
+                createdDate: new Date(),
+            });
+        }
+        return 'success';
+    } catch (err) {
+        return err.toString();
+    }
+}
+
 exports.applyWithdrawal = async (req, res) => {
     try {
         const data = {
@@ -19,7 +76,7 @@ exports.applyWithdrawal = async (req, res) => {
         };
 
         const response = await Withdrawal.create(data);
-        await updatePoint(req.body.userId, req.body.pointAmount, 0, '출금');
+        await updatePointAmount(req.body.userId, req.body.pointAmount, 0, '출금');
 
         return res.status(200).send({result: 'WITHDRAWAL_REGISTER_SUCCESS', data: response});
     } catch (err) {
@@ -86,7 +143,7 @@ exports.getWithdrawalByUser = (req, res) => {
 
 exports.cancelWithdrawal = async (req, res) => {
     try {
-        await updatePoint(req.body.userId, req.body.pointAmount, 1, '출금취소');
+        await updatePointAmount(req.body.userId, req.body.pointAmount, 1, '출금취소');
 
         await Withdrawal.destroy({
             where: {
@@ -122,7 +179,7 @@ exports.finishWithdrawal = async (req, res) => {
         if (withdrawal.status === 0) {
             await updateWithdrawalStatus(withdrawalId, status);
             if (status > 1) {
-                await updatePoint(withdrawal.userId, withdrawal.pointAmount, 1, '출금취소');
+                await updatePointAmount(withdrawal.userId, withdrawal.pointAmount, 1, '출금취소');
             }
         }
 
@@ -157,38 +214,7 @@ const updateWithdrawalStatus = async (withdrawalId, status) => {
     }
 }
 
-/**
- *
- * @param userId
- * @param amount
- * @param action
- *          0-SUBTRACT
- *          1-ADD
- * @param content
- * @returns {Promise<string>}
- */
-exports.updatePoint = async (userId, amount, action, content) => {
-    try {
-        const profile = await Profile.findOne({
-            where: {userId: userId}
-        });
 
-        if (profile) {
-            profile.pointAmount = action === 1 ? profile.pointAmount + amount : profile.pointAmount - amount;
-            await profile.save();
-
-            await UserPoint.create({
-                userId: userId,
-                content: content,
-                point: action === 1 ? amount : -amount,
-                createdDate: new Date(),
-            });
-        }
-        return 'success';
-    } catch (err) {
-        return err.toString();
-    }
-}
 
 exports.registerAccountType = (req, res) => {
     AccountType.create({
