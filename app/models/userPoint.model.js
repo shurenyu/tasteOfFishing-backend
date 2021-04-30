@@ -9,6 +9,9 @@ module.exports = (sequelize, Sequelize) => {
         point: {
             type: Sequelize.INTEGER(21)
         },
+        originPoint: {
+            type: Sequelize.INTEGER(21)
+        },
         createdDate: {
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW

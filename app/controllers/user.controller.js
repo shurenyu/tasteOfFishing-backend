@@ -533,6 +533,7 @@ exports.updateUserPoint = async (req, res) => {
     try {
         const userId = req.body.userId;
         const pointAmount = req.body.pointAmount;
+        const originPoint = req.body.originPoint;
 
         const profile = await Profile.findOne({
             where: {userId: userId}
@@ -545,6 +546,7 @@ exports.updateUserPoint = async (req, res) => {
             userId: userId,
             content: '관리자 수정',
             point: pointAmount,
+            originPoint: originPoint,
             createdDate: new Date()
         });
 
