@@ -534,6 +534,7 @@ exports.updateUserPoint = async (req, res) => {
         const userId = req.body.userId;
         const pointAmount = req.body.pointAmount;
         const originPoint = req.body.originPoint;
+        console.log('origin Point: ', originPoint)
 
         const profile = await Profile.findOne({
             where: {userId: userId}

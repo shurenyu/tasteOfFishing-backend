@@ -12,8 +12,8 @@ const Op = db.Sequelize.Op;
 const {getSubTokens, sendNotification} = require("../utils/push-notification");
 const {rewarding} = require("./fish.controller");
 const CHECK_INTERVAL = 60000;
-const aDay = 24 * 3600000;
-// const aDay = 3 * 60000;
+// const aDay = 24 * 3600000;
+const aDay = 3 * 60000;
 
 const validCompetition = (start, end) => {
     const startDate = new Date(start).getTime();
