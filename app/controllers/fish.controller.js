@@ -55,7 +55,7 @@ const updateRecordAndSendMessage = async (fish, images) => {
                     FROM (
                         SELECT f.fishWidth
                         FROM fishes f
-                        WHERE f.userId = ${fish.userId} AND f.competitionId = ${fish.competitionId}
+                        WHERE f.userId = ${fish.userId} AND f.competitionId = ${fish.competitionId} AND f.status = 1
                         ORDER BY f.fishWidth DESC
                         LIMIT ${competition.rankFishNumber}
                     ) as h
@@ -809,7 +809,8 @@ exports.updateFish = async (req, res) => {
 
         res.status(200).send({result: 'FISH_UPDATE_SUCCESS'});
 
-        await updateRecordAndSendMessage(fish);
+        // await updateRecordAndSendMessage(fish);
+        await updateRecords(fish);
 
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
@@ -883,19 +884,20 @@ exports.getRankingRealtime = async (req, res) => {
                 o.fishWidth,
                 o.fishTypeId,
                 o.userId,
-                o.disabled
+                o.disabled,
+                o.status
             FROM
                 fishes o
             LEFT JOIN fishes b ON o.userId = b.userId
             AND o.fishWidth < b.fishWidth
-            WHERE b.fishWidth IS NULL
+            WHERE b.fishWidth IS NULL 
             ) x
         JOIN users u ON u.id = x.userId
         JOIN profiles p ON p.userId = u.id
         LEFT JOIN userStyles ust ON ust.id = p.userStyleId
         JOIN fishImages fi ON fi.fishId = x.id
         JOIN fishTypes ft ON ft.id = x.fishTypeId
-        WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'} AND fi.imageType = 1 AND x.disabled = 0
+        WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'} AND fi.imageType = 1 AND x.disabled = 0 AND x.status = 1
         ORDER BY x.fishWidth DESC
     `);
 
@@ -1248,7 +1250,7 @@ const updateRecords = async (fish) => {
                     FROM (
                         SELECT f.fishWidth
                         FROM fishes f
-                        WHERE f.userId = ${fish.userId} AND f.competitionId = ${fish.competitionId} AND disabled = 0
+                        WHERE f.userId = ${fish.userId} AND f.competitionId = ${fish.competitionId} AND disabled = 0 AND status = 1
                         ORDER BY f.fishWidth DESC
                         LIMIT ${competition.rankFishNumber}
                     ) as h
@@ -1264,6 +1266,7 @@ const updateRecords = async (fish) => {
                         userId: fish.userId,
                         competitionId: fish.competitionId,
                         disabled: 0,
+                        status: 1,
                         fishWidth: {[Op.gte]: fish.questFishWidth}
                     },
                     include: [{
@@ -1284,6 +1287,7 @@ const updateRecords = async (fish) => {
                         userId: fish.userId,
                         competitionId: fish.competitionId,
                         disabled: 0,
+                        status: 1,
                     },
                 });
 
@@ -1296,6 +1300,7 @@ const updateRecords = async (fish) => {
                         userId: fish.userId,
                         competitionId: fish.competitionId,
                         disabled: 0,
+                        status: 1,
                         fishWidth: {[Op.gte]: fish.questFishWidth}
                     },
                 });
@@ -1314,6 +1319,7 @@ const updateRecords = async (fish) => {
                         userId: fish.userId,
                         competitionId: fish.competitionId,
                         disabled: 0,
+                        status: 1,
                     },
                     include: [{
                         model: FishImage
@@ -1332,6 +1338,6 @@ const updateRecords = async (fish) => {
 
         return 1;
     } catch (err) {
-        return 0
+        return 0;
     }
 }

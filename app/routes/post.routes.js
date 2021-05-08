@@ -29,6 +29,12 @@ module.exports = function (app) {
     );
 
     app.all(
+        "/post/admin/get-all",
+        [authJwt.verifyToken],
+        controller.getAllPostsForAdmin
+    );
+
+    app.all(
         "/post/delete",
         [authJwt.verifyToken],
         controller.deletePost

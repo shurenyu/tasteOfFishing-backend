@@ -134,6 +134,33 @@ exports.getPostById = (req, res) => {
     })
 };
 
+exports.getAllPostsForAdmin = (req, res) => {
+    Post.findAll({
+        limit: req.body.limit || 1000000,
+        offset: req.body.offset || 0,
+        order: [['createdDate', 'DESC']],
+        include: [{
+            model: User,
+            attributes: ['id', 'name', 'type'],
+            include: [{
+                model: Profile,
+                attributes: ['id', 'avatar']
+            }]
+        }, {
+            model: PostImage
+        }, {
+            model: PostComment,
+            attributes: ['id'],
+        }],
+    })
+        .then(async data => {
+            const count = await Post.count();
+            return res.status(200).send({result: data, totalCount: count});
+        }).catch(err => {
+        return res.status(500).send({msg: err.toString()});
+    })
+};
+
 exports.getAllPosts = (req, res) => {
     Post.findAll({
         limit: req.body.limit || 1000000,

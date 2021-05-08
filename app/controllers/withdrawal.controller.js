@@ -91,7 +91,7 @@ exports.getAllWithdrawal = (req, res) => {
     Withdrawal.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
-        order: [['createdDate', 'ASC']],
+        order: [['createdDate', 'DESC']],
         include: [{
             model: User,
             attributes: ['id', 'name']

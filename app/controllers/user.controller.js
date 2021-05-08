@@ -262,6 +262,26 @@ exports.applyCompetition = async (req, res) => {
             return res.status(400).send({msg: 'ALREADY_APPLIED'});
         }
 
+        const userApplication1 = await UserApplication.findOne({
+            where: {
+                userId: userId,
+                '$Competition.startTime$': {[Op.lt]: new Date().getTime()},
+                '$Competition.endTime$': {[Op.gt]: new Date().getTime()},
+            },
+            include: [{
+                model: Competition,
+                attributes: ['id'],
+            }]
+        })
+
+        const competition = await Competition.findOne({
+            where: {id: competitionId}
+        });
+
+        if (userApplication1 && competition.duplicateAllow === 0) {
+            return res.status(400).send({msg: 'NOT_REPEAT_APPLYING'});
+        }
+
         const profile = await Profile.findOne({
             where: {
                 userId: userId,
@@ -328,6 +348,26 @@ exports.attendCompetition = async (req, res) => {
 
         if (userCompetition) {
             return res.status(400).send({msg: 'ALREADY_ATTENDED'});
+        }
+
+        const userCompetition1 = await UserCompetition.findOne({
+            where: {
+                userId: userId,
+                '$Competition.startTime$': {[Op.lt]: new Date().getTime()},
+                '$Competition.endTime$': {[Op.gt]: new Date().getTime()},
+            },
+            include: [{
+                model: Competition,
+                attributes: ['id'],
+            }]
+        })
+
+        const competition = await Competition.findOne({
+            where: {id: competitionId}
+        });
+
+        if (userCompetition1 && competition.duplicateAllow === 0) {
+            return res.status(400).send({msg: 'NOT_REPEAT_ATTENDING'});
         }
 
         const profile = await Profile.findOne({

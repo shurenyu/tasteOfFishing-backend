@@ -542,7 +542,7 @@ exports.getCompetitionRanking = async (req, res) => {
 
         if (competition.mode > 0) {
             data = await UserCompetition.findAll({
-                limit: limit || 1000000,
+                limit: limit || 10000,
                 order: order,
                 attributes: ['id', `record${competition.mode}`, 'image'],
                 where: {
