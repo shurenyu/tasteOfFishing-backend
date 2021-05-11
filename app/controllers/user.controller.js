@@ -262,15 +262,21 @@ exports.applyCompetition = async (req, res) => {
             return res.status(400).send({msg: 'ALREADY_APPLIED'});
         }
 
-        const userApplication1 = await UserApplication.findOne({
+        const attendingContest = await UserCompetition.findOne({
             where: {
                 userId: userId,
-                '$Competition.startTime$': {[Op.lt]: new Date().getTime()},
-                '$Competition.endTime$': {[Op.gt]: new Date().getTime()},
             },
             include: [{
                 model: Competition,
                 attributes: ['id'],
+                where: {
+                    startDate: {
+                        [Op.lte]: new Date().getTime()
+                    },
+                    endDate: {
+                        [Op.gte]: new Date().getTime()
+                    }
+                },
             }]
         })
 
@@ -278,7 +284,7 @@ exports.applyCompetition = async (req, res) => {
             where: {id: competitionId}
         });
 
-        if (userApplication1 && competition.duplicateAllow === 0) {
+        if (attendingContest && competition.duplicateAllow === 0) {
             return res.status(400).send({msg: 'NOT_REPEAT_APPLYING'});
         }
 
@@ -350,15 +356,21 @@ exports.attendCompetition = async (req, res) => {
             return res.status(400).send({msg: 'ALREADY_ATTENDED'});
         }
 
-        const userCompetition1 = await UserCompetition.findOne({
+        const attendingContest = await UserCompetition.findOne({
             where: {
                 userId: userId,
-                '$Competition.startTime$': {[Op.lt]: new Date().getTime()},
-                '$Competition.endTime$': {[Op.gt]: new Date().getTime()},
             },
             include: [{
                 model: Competition,
                 attributes: ['id'],
+                where: {
+                    startDate: {
+                        [Op.lte]: new Date().getTime()
+                    },
+                    endDate: {
+                        [Op.gte]: new Date().getTime()
+                    }
+                },
             }]
         })
 
@@ -366,7 +378,7 @@ exports.attendCompetition = async (req, res) => {
             where: {id: competitionId}
         });
 
-        if (userCompetition1 && competition.duplicateAllow === 0) {
+        if (attendingContest && competition.duplicateAllow === 0) {
             return res.status(400).send({msg: 'NOT_REPEAT_ATTENDING'});
         }
 
@@ -415,6 +427,7 @@ exports.attendCompetition = async (req, res) => {
 
         return res.status(200).send({result: 'SUCCESS_COMPETITION_ATTEND', userInfo: profile});
     } catch (err) {
+        console.log(err)
         return res.status(500).send({msg: err.toString()});
     }
 }
