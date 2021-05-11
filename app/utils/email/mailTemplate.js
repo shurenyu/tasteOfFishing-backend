@@ -65,8 +65,7 @@ module.exports = (mail_content) => {
 <body style="font-family: Poppins, sans-serif; background-color: #e8e5ea;">
 <div class="mail-container">
     <div class="logo-bar">
-<!--        <img src="https://centralitacontrol-api.eternity.online/public/files/header-logo.png" alt="site logo" style="width: 360px;"/>-->
-        <img src="http://localhost:5000/public/files/logo-1.svg" alt="site logo"/>
+        <img src="http://54.180.210.166:5000/public/files/logo.svg" alt="site logo" style="width: 360px"/>
     </div>
     <div>
         <div class="mail-header">${mail_content.header}</div>
