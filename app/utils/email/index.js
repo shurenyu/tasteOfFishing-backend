@@ -30,7 +30,12 @@ const sendMail = (res, to, user_name, userId, subject, content) => {
         to: `${user_name} <${to}>`,
         subject: subject,
         text: 'Hello, dear user!',
-        html: content
+        html: content,
+        attachments: [{
+            filename: 'logo.svg',
+            path: 'http://54.180.210.166:5000/public/files/logo.svg',
+            cid: 'tasteoffishing@devteam'
+        }]
     }, function (err, info) {
         if (err) {
             return res.status(500).send({msg: "AUTH.ERROR", err: err.toString()});
