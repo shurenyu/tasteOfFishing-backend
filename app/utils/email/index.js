@@ -1,4 +1,5 @@
 const config = require("../../config/auth.config")
+
 const nodeMailer = require("nodemailer");
 const mailConfig = {
     service: 'gmail',
@@ -33,7 +34,7 @@ const sendMail = (res, to, user_name, userId, subject, content) => {
         html: content,
         attachments: [{
             filename: 'logo.svg',
-            path: 'http://54.180.210.166:5000/public/files/logo.svg',
+            path: '../../../public/files/logo.svg',
             cid: 'tasteoffishing@devteam'
         }]
     }, function (err, info) {
