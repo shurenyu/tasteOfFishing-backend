@@ -34,7 +34,7 @@ const sendMail = (res, to, user_name, userId, subject, content) => {
         html: content,
         attachments: [{
             filename: 'logo.svg',
-            path: '../../../public/files/logo.svg',
+            path: './public/files/logo.svg',
             cid: 'tasteoffishing@devteam'
         }]
     }, function (err, info) {
