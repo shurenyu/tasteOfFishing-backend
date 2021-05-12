@@ -284,7 +284,7 @@ exports.applyCompetition = async (req, res) => {
             where: {id: competitionId}
         });
 
-        if (attendingContest && competition.duplicateAllow === 0) {
+        if (attendingContest && !competition.duplicateAllow) {
             return res.status(400).send({msg: 'NOT_REPEAT_APPLYING'});
         }
 
@@ -378,7 +378,10 @@ exports.attendCompetition = async (req, res) => {
             where: {id: competitionId}
         });
 
-        if (attendingContest && competition.duplicateAllow === 0) {
+        console.log('duplicate: ', competition.duplicateAllow)
+        console.log('attendingContest: ', attendingContest)
+
+        if (attendingContest && !competition.duplicateAllow) {
             return res.status(400).send({msg: 'NOT_REPEAT_ATTENDING'});
         }
 

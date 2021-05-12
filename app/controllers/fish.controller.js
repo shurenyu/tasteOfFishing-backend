@@ -728,7 +728,7 @@ exports.getFishesByMultiFilter = async (req, res) => {
         const order = req.body.order;
         const userId = req.body.userId;
 
-        let filter = {disabled: 0};
+        let filter = {};
 
         if (competitionId) filter.competitionId = competitionId;
         if (status) filter.status = status;
