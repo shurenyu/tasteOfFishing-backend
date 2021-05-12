@@ -65,7 +65,8 @@ module.exports = (mail_content) => {
 <body style="font-family: Poppins, sans-serif; background-color: #e8e5ea;">
 <div class="mail-container">
     <div class="logo-bar">
-        <img src="cid:tasteoffishing@devteam" alt="site logo" style="width: 120px"/>
+<!--        <img src="cid:tasteoffishing@devteam" alt="site logo" style="width: 120px"/>-->
+        <img src="http://54.180.210.166:5000/public/files/logo.svg" alt="site logo" style="width: 120px"/>
     </div>
     <div>
         <div class="mail-header">${mail_content.header}</div>

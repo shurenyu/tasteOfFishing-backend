@@ -30,13 +30,13 @@ const sendMail = (res, to, user_name, userId, subject, content) => {
         from: 'Customer Center <connectzero.dev@gmail.com>',
         to: `${user_name} <${to}>`,
         subject: subject,
-        text: 'Hello, dear user!',
+        forceEmbeddedImages: true,
         html: content,
-        attachments: [{
-            filename: 'logo.svg',
-            path: './public/files/logo.svg',
-            cid: 'tasteoffishing@devteam'
-        }]
+        // attachments: [{
+        //     filename: 'logo.svg',
+        //     path: './public/files/logo.svg',
+        //     cid: 'tasteoffishing@devteam'
+        // }]
     }, function (err, info) {
         if (err) {
             return res.status(500).send({msg: "AUTH.ERROR", err: err.toString()});
