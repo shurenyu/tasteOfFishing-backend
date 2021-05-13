@@ -524,6 +524,7 @@ exports.getFishesByUser = (req, res) => {
         userId: req.body.userId,
         competitionId: req.body.competitionId,
         disabled: 0,
+        status: 1,
     };
 
     if (req.body.accepted === 1) {
