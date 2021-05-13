@@ -773,7 +773,7 @@ exports.updateFish = async (req, res) => {
         const fish = await Fish.findOne({
             where: {
                 id: req.body.fishId,
-                disabled: 0
+                disabled: 0,
             }
         });
 
@@ -782,7 +782,6 @@ exports.updateFish = async (req, res) => {
         }
 
         const keys = Object.keys(req.body);
-        console.log('keys: ', keys);
         for (const key of keys) {
             if (key !== 'fishId') {
                 fish[key] = req.body[key];
@@ -1225,6 +1224,7 @@ const getRecordByUser = async (userId) => {
 
 const updateRecords = async (fish) => {
     /* update the record of userCompetition */
+    console.log('here1')
 
     try {
         const competition = await Competition.findOne({
@@ -1260,6 +1260,9 @@ const updateRecords = async (fish) => {
                 await userCompetition.save();
 
             } else if (competition.mode === 2) {
+                console.log('here2')
+                console.log('***', fish.userId, fish.competitionId, competition.questFishWidth)
+
                 const maxFish = await Fish.findAll({
                     limit: 1,
                     order: [['fishWidth', 'DESC']],
@@ -1268,14 +1271,15 @@ const updateRecords = async (fish) => {
                         competitionId: fish.competitionId,
                         disabled: 0,
                         status: 1,
-                        fishWidth: {[Op.gte]: fish.questFishWidth}
+                        fishWidth: {[Op.gte]: competition.questFishWidth}
                     },
                     include: [{
                         model: FishImage
                     }]
                 });
-                userCompetition.record2 = maxFish[0].fishWidth;
-                userCompetition.image = maxFish[0].fishImages &&
+                console.log('maxfish: ', maxFish[0])
+                userCompetition.record2 = maxFish[0] && maxFish[0].fishWidth || 0;
+                userCompetition.image = maxFish[0] && maxFish[0].fishImages &&
                     maxFish[0].fishImages.find(x => x.imageType === 1) &&
                     maxFish[0].fishImages.find(x => x.imageType === 1).image;
 
@@ -1302,7 +1306,7 @@ const updateRecords = async (fish) => {
                         competitionId: fish.competitionId,
                         disabled: 0,
                         status: 1,
-                        fishWidth: {[Op.gte]: fish.questFishWidth}
+                        fishWidth: {[Op.gte]: competition.questFishWidth}
                     },
                 });
 
@@ -1339,6 +1343,7 @@ const updateRecords = async (fish) => {
 
         return 1;
     } catch (err) {
+        console.log(err)
         return 0;
     }
 }
