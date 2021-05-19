@@ -143,6 +143,16 @@ exports.getWithdrawalByUser = (req, res) => {
 
 exports.cancelWithdrawal = async (req, res) => {
     try {
+        const withdrawalInfo = await Withdrawal.findOne({
+            where: {
+                id: req.body.id
+            }
+        });
+
+        if (withdrawalInfo.status > 0) {
+            return res.status(200).send({msg: 'WITHDRAWAL_FINISHED'});
+        }
+
         await updatePointAmount(req.body.userId, req.body.pointAmount, 1, '출금취소');
 
         await Withdrawal.destroy({

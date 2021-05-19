@@ -154,7 +154,7 @@ exports.register = async (req, res) => {
     try {
         const user = await User.findOne({where: {email: req.body.email.toLowerCase()}});
         if (user) {
-            return res.status(400).json({msg: "AUTH.VALIDATION.EMAIL_DUPLICATED"});
+            return res.status(200).json({msg: "AUTH.VALIDATION.EMAIL_DUPLICATED"});
         }
 
         const newUser = {
@@ -199,7 +199,7 @@ exports.appLogin = async (req, res) => {
     const {msg, isValid} = validateLoginInput(req.body);
 
     if (!isValid) {
-        return res.status(400).json({msg: msg});
+        return res.status(200).json({msg: msg});
     }
 
     const device = req.body.device || '';
@@ -212,6 +212,18 @@ exports.appLogin = async (req, res) => {
         const userRecord = await getUserRecord(user.id);
 
         if (user) {
+            if (user.type === 2) {
+                return res.status(200).json({msg: "AUTH.VALIDATION.GOOGLE_ACCOUNT"});
+            }
+
+            if (user.type === 3) {
+                return res.status(200).json({msg: "AUTH.VALIDATION.FACEBOOK_ACCOUNT"});
+            }
+
+            if (user.type === 1) {
+                return res.status(200).json({msg: "AUTH.VALIDATION.ADMIN_ACCOUNT"});
+            }
+
             bcrypt.compare(req.body.password, user.password).then(async isMatch => {
                 if (isMatch) {
                     let dailyCheck = false;
@@ -270,11 +282,11 @@ exports.appLogin = async (req, res) => {
                             });
                     });
                 } else {
-                    res.status(400).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
+                    res.status(200).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
                 }
             }).catch(err => res.status(500).json({msg: err.toString()}));
         } else {
-            res.status(404).json({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
+            res.status(200).json({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
         }
     } catch (err) {
         return res.status(500).json({msg: err.toString()})

@@ -414,15 +414,17 @@ exports.attendCompetition = async (req, res) => {
         });
 
         if (profile.userStyleId <= 5) {
-            if (attendCount <= 1) {
-                profile.userStyleId = 1;
+            if (attendCount < 1) {
+                profile.userStyleId = 0;
             } else if (attendCount <= 10) {
-                profile.userStyleId = 2;
+                profile.userStyleId = 1;
             } else if (attendCount <= 20) {
-                profile.userStyleId = 3;
+                profile.userStyleId = 2;
             } else if (attendCount <= 50) {
-                profile.userStyleId = 4;
+                profile.userStyleId = 3;
             } else if (attendCount <= 100) {
+                profile.userStyleId = 4;
+            } else {
                 profile.userStyleId = 5;
             }
         }
@@ -465,15 +467,17 @@ exports.cancelCompetition = async (req, res) => {
         });
 
         if (profile.userStyleId <= 5) {
-            if (attendCount <= 1) {
-                profile.userStyleId = 1;
+            if (attendCount < 1) {
+                profile.userStyleId = 0;
             } else if (attendCount <= 10) {
-                profile.userStyleId = 2;
+                profile.userStyleId = 1;
             } else if (attendCount <= 20) {
-                profile.userStyleId = 3;
+                profile.userStyleId = 2;
             } else if (attendCount <= 50) {
-                profile.userStyleId = 4;
+                profile.userStyleId = 3;
             } else if (attendCount <= 100) {
+                profile.userStyleId = 4;
+            } else {
                 profile.userStyleId = 5;
             }
         }

@@ -195,9 +195,9 @@ exports.searchPosts = async (req, res) => {
     try {
         const [posts, metadata] = await db.sequelize.query(`
             SELECT posts.*, users.name, postImages.postId, postImages.image, profiles.username, profiles.avatar
-            FROM posts 
-            INNER JOIN users ON users.id = posts.userId
-            INNER JOIN profiles ON users.id = profiles.userId
+            FROM posts
+            LEFT JOIN users ON users.id = posts.userId
+            LEFT JOIN profiles ON users.id = profiles.userId
             LEFT JOIN postImages ON postImages.postId = posts.id
             WHERE (users.name LIKE '%${keyword}%' OR content LIKE '%${keyword}%' OR profiles.username LIKE '%${keyword}%') AND posts.disabled = 0
             ORDER BY createdDate DESC
