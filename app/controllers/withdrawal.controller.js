@@ -112,7 +112,7 @@ exports.getWithdrawalById = (req, res) => {
     Withdrawal.findOne({
         where: {id: withdrawalId}
     }).then((data) => {
-        return res.status(200).send({result: data});
+        return res.status(200).send({data: data});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
