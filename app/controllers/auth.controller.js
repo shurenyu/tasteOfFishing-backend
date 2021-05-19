@@ -220,7 +220,7 @@ exports.appLogin = async (req, res) => {
                 return res.status(200).json({msg: "AUTH.VALIDATION.FACEBOOK_ACCOUNT"});
             }
 
-            if (user.type === 1) {
+            if (user.type === 0) {
                 return res.status(200).json({msg: "AUTH.VALIDATION.ADMIN_ACCOUNT"});
             }
 
