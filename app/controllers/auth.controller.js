@@ -646,9 +646,9 @@ exports.verifyEmail = async (req, res) => {
         userId,
         'Email Certification',
         makeMailFromTemplate({
-            header: `안녕하세요.`,
+            header: `안녕하세요. 낚시의 맛 입니다.`,
             title: '인증코드전송',
-            content: '이메일인증을 위해 아래의 인증코드를 리용하세요.',
+            content: '이메일인증을 위해 아래의 인증코드를 입력해주세요.',
             value: code,
             extra: '',
         })
