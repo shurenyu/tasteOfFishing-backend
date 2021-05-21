@@ -302,7 +302,7 @@ exports.getProgressingCompetitions = (req, res) => {
         offset: req.body.offset || 0,
         order: [['createdDate', 'DESC']],
         where: {
-            startDate: {
+            startApplication: {
                 [Op.lte]: now.getTime()
             },
             endDate: {

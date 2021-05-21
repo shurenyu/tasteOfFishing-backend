@@ -194,7 +194,7 @@ exports.searchPosts = async (req, res) => {
 
     try {
         const [posts, metadata] = await db.sequelize.query(`
-            SELECT posts.*, users.name, postImages.postId, postImages.image, profiles.username, profiles.avatar
+            SELECT posts.*, users.name as userName, users.type as userType, postImages.postId, postImages.image, profiles.username, profiles.avatar
             FROM posts
             LEFT JOIN users ON users.id = posts.userId
             LEFT JOIN profiles ON users.id = profiles.userId
@@ -231,7 +231,8 @@ exports.searchPosts = async (req, res) => {
                     updatedDate: x.updatedDate,
                     user: {
                         id: x.userId,
-                        name: x.name,
+                        name: x.userName,
+                        type: x.userType,
                         profile: {
                             avatar: x.avatar,
                             username: x.username,

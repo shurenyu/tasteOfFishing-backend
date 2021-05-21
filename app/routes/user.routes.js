@@ -12,13 +12,11 @@ module.exports = function (app) {
 
     app.all(
         "/user/profile/register",
-        [authJwt.verifyToken],
         controller.registerProfile
     );
 
     app.all(
         "/user/profile/update",
-        [authJwt.verifyToken],
         controller.updateProfile
     );
 
