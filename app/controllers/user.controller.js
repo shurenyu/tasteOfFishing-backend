@@ -23,8 +23,10 @@ exports.registerProfile = async (req, res) => {
         const user = await User.findOne({
             where: {id: req.body.userId}
         });
-        user.name = req.body.name || user.name;
-        await user.save();
+        if (user) {
+            user.name = req.body.name;
+            await user.save();
+        }
 
         const profile = await Profile.create({
             userId: req.body.userId,
@@ -295,7 +297,7 @@ exports.applyCompetition = async (req, res) => {
         });
 
         if (profile.pointAmount < attendPoint) {
-            return res.status(400).send({result: 'POINT_NOT_ENOUGH'});
+            return res.status(400).send({msg: 'POINT_NOT_ENOUGH'});
         }
 
         await UserApplication.create({
@@ -392,7 +394,7 @@ exports.attendCompetition = async (req, res) => {
         });
 
         if (profile.pointAmount < attendPoint) {
-            return res.status(400).send({result: 'POINT_NOT_ENOUGH'});
+            return res.status(400).send({msg: 'POINT_NOT_ENOUGH'});
         }
 
         await UserCompetition.create({
