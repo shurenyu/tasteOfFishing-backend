@@ -46,6 +46,8 @@ const updatePointAmount = async (userId, amount, action, content) => {
         });
 
         if (profile) {
+            if (action === 0 && profile.pointAmount < amount) return 'NOT_ENOUGH_POINT';
+
             profile.pointAmount = action === 1 ? profile.pointAmount + amount : profile.pointAmount - amount;
             await profile.save();
 
@@ -76,7 +78,10 @@ exports.applyWithdrawal = async (req, res) => {
         };
 
         const response = await Withdrawal.create(data);
-        await updatePointAmount(req.body.userId, req.body.pointAmount, 0, '출금');
+        const result = await updatePointAmount(req.body.userId, req.body.pointAmount, 0, '출금');
+        if (result === 'NOT_ENOUGH_POINT') {
+            return res.status(200).send({msg: 'NOT_ENOUGH_POINT'});
+        }
 
         return res.status(200).send({result: 'WITHDRAWAL_REGISTER_SUCCESS', data: response});
     } catch (err) {
