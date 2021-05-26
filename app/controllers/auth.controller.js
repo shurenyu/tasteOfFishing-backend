@@ -209,9 +209,9 @@ exports.appLogin = async (req, res) => {
             where: {email: req.body.email.toLowerCase()},
         });
 
-        const userRecord = await getUserRecord(user.id);
-
         if (user) {
+            const userRecord = await getUserRecord(user.id);
+
             if (user.type === 2) {
                 return res.status(200).json({msg: "AUTH.VALIDATION.GOOGLE_ACCOUNT"});
             }
