@@ -224,6 +224,17 @@ exports.appLogin = async (req, res) => {
                 return res.status(200).json({msg: "AUTH.VALIDATION.ADMIN_ACCOUNT"});
             }
 
+            const profile = await Profile.findOne({
+                where: {userId: user.id}
+            });
+
+            if (!profile) {
+                await User.destroy({
+                    where: {id: user.id}
+                });
+                res.status(200).json({msg: "AUTH.VALIDATION.PROFILE_NOT_FOUND"});
+            }
+
             bcrypt.compare(req.body.password, user.password).then(async isMatch => {
                 if (isMatch) {
                     let dailyCheck = false;

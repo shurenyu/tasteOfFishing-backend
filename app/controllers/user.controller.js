@@ -296,7 +296,7 @@ exports.applyCompetition = async (req, res) => {
             }
         });
 
-        if (profile.pointAmount < attendPoint) {
+        if (!profile || profile.pointAmount < attendPoint) {
             return res.status(400).send({msg: 'POINT_NOT_ENOUGH'});
         }
 
@@ -393,7 +393,7 @@ exports.attendCompetition = async (req, res) => {
             }
         });
 
-        if (profile.pointAmount < attendPoint) {
+        if (!profile || profile.pointAmount < attendPoint) {
             return res.status(400).send({msg: 'POINT_NOT_ENOUGH'});
         }
 
