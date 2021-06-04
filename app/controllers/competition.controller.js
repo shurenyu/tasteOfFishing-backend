@@ -36,6 +36,7 @@ exports.registerCompetition = async (req, res) => {
         return res.status(400).send({msg: 'INVALID_DATE'});
     }
 
+    console.log(req.body)
     try {
         const newCompetition = req.body.type === 1 ? {
             ...req.body,

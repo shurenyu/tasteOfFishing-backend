@@ -68,7 +68,7 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER(20)
         },
         termsAndConditions: {
-            type: Sequelize.STRING(1200)
+            type: Sequelize.TEXT,
         },
         needApplication: {
             type: Sequelize.INTEGER(4)
