@@ -26,10 +26,12 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DOUBLE
         },
         areaCode: {
-            type: Sequelize.INTEGER(11)
+            type: Sequelize.INTEGER(11),
+            defaultValue: 0,
         },
         note: {
             type: Sequelize.STRING(1000),
+            defaultValue: '',
         },
         rejectText: {
             type: Sequelize.STRING(500),
@@ -37,9 +39,6 @@ module.exports = (sequelize, Sequelize) => {
         disabled: {
             type: Sequelize.INTEGER(4),
             defaultValue: 0,
-        },
-        startHour: {
-            type: Sequelize.INTEGER(3)
         },
         registerDate: {
             type: Sequelize.DATE,
