@@ -1182,33 +1182,35 @@ const getRecordByUser = async (userId) => {
     });
 
     for (const item of myCompetitions) {
-        if (item.competition && item.competition.mode === 1) {
-            rankDiaryCount += 1;
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) {
+            if (item.competition && item.competition.mode === 1) {
+                rankDiaryCount += 1;
 
-            const maxScore = await UserCompetition.max('record1', {
-                where: {competitionId: item.competition.id}
-            });
-
-            if (item.record1 === maxScore) rankChampionshipCount += 1;
-        } else if (item.competition) {
-            questDiaryCount += 1;
-
-            const comp = await Competition.findOne({
-                where: {id: item.competition.id}
-            });
-
-            if (item.competition.mode === 2) {
-                if (item.record2 >= comp.questFishWidth) questChampionshipCount += 1;
-            } else if (item.competition.mode === 3) {
-                if (item.record3 >= comp.questFishNumber) questChampionshipCount += 1;
-            } else if (item.competition.mode === 4) {
-                if (item.record4 >= comp.questFishNumber) questChampionshipCount += 1;
-            } else {
-                const minBias = await UserCompetition.min('record5', {
+                const maxScore = await UserCompetition.max('record1', {
                     where: {competitionId: item.competition.id}
                 });
 
-                if (item.record5 === minBias) questChampionshipCount += 1;
+                if (item.record1 === maxScore) rankChampionshipCount += 1;
+            } else if (item.competition) {
+                questDiaryCount += 1;
+
+                const comp = await Competition.findOne({
+                    where: {id: item.competition.id}
+                });
+
+                if (item.competition.mode === 2) {
+                    if (item.record2 >= comp.questFishWidth) questChampionshipCount += 1;
+                } else if (item.competition.mode === 3) {
+                    if (item.record3 >= comp.questFishNumber) questChampionshipCount += 1;
+                } else if (item.competition.mode === 4) {
+                    if (item.record4 >= comp.questFishNumber) questChampionshipCount += 1;
+                } else {
+                    const minBias = await UserCompetition.min('record5', {
+                        where: {competitionId: item.competition.id}
+                    });
+
+                    if (item.record5 === minBias) questChampionshipCount += 1;
+                }
             }
         }
     }
