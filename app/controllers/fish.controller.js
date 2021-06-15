@@ -862,44 +862,102 @@ exports.deleteFishAndUpdateReport = async (req, res) => {
     }
 }
 
+// exports.getRankingRealtime = async (req, res) => {
+//     const fishTypeId = req.body.fishTypeId;
+//     const userId = req.body.userId;
+//
+//     try {
+//         const [winners, metadata] = await db.sequelize.query(`
+//         SELECT
+//             x.id, x.fishWidth as max, x.fishTypeId, x.userId,
+//             u.name AS userName,
+//             ust.name AS userStyle,
+//             ft.name AS fishType,
+//             fi.image as fishImage, fi.imageType as imageType, fi.measureInfo as measureInfo,
+//             p.avatar
+//         FROM
+//             (
+//             SELECT
+//                 o.id,
+//                 o.fishWidth,
+//                 o.fishTypeId,
+//                 o.userId,
+//                 o.disabled,
+//                 o.status
+//             FROM
+//                 fishes o
+//             LEFT JOIN fishes b ON o.userId = b.userId
+//             AND o.fishWidth < b.fishWidth
+//             WHERE b.fishWidth IS NULL
+//             ) x
+//         JOIN users u ON u.id = x.userId
+//         JOIN profiles p ON p.userId = u.id
+//         LEFT JOIN userStyles ust ON ust.id = p.userStyleId
+//         JOIN fishImages fi ON fi.fishId = x.id
+//         JOIN fishTypes ft ON ft.id = x.fishTypeId
+//         WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'} AND fi.imageType = 1 AND x.disabled = 0 AND x.status = 1
+//         ORDER BY x.fishWidth DESC
+//     `);
+//
+//         let myFish = {};
+//         let myRanking = 0;
+//
+//         for (let i = 0; i < winners.length; i++) {
+//
+//             if (winners[i]['userId'] === userId) {
+//                 myFish = {...winners[i]};
+//                 myRanking = i + 1;
+//             }
+//         }
+//
+//         return res.status(200).send({result: winners, myFish: myFish, myRanking: myRanking});
+//
+//     } catch (err) {
+//         return res.status(500).send({msg: err.toString()});
+//     }
+//
+// }
+
 exports.getRankingRealtime = async (req, res) => {
-    const limit = req.body.limit || 100000;
-    const offset = req.body.offset || 0;
     const fishTypeId = req.body.fishTypeId;
     const userId = req.body.userId;
 
     try {
         const [winners, metadata] = await db.sequelize.query(`
-        SELECT
-            x.id, x.fishWidth as max, x.fishTypeId, x.userId,
-            u.name AS userName,
-            ust.name AS userStyle,
-            ft.name AS fishType,
-            fi.image as fishImage, fi.imageType as imageType, fi.measureInfo as measureInfo,
-            p.avatar
-        FROM
-            (
             SELECT
-                o.id,
-                o.fishWidth,
-                o.fishTypeId,
-                o.userId,
-                o.disabled,
-                o.status
+                x.id, x.fishWidth as max, x.fishTypeId, x.userId,
+                u.name AS userName,
+                ust.name AS userStyle,
+                ft.name AS fishType,
+                fi.image as fishImage, fi.imageType as imageType, fi.measureInfo as measureInfo,
+                p.avatar
             FROM
-                fishes o
-            LEFT JOIN fishes b ON o.userId = b.userId
-            AND o.fishWidth < b.fishWidth
-            WHERE b.fishWidth IS NULL 
-            ) x
-        JOIN users u ON u.id = x.userId
-        JOIN profiles p ON p.userId = u.id
-        LEFT JOIN userStyles ust ON ust.id = p.userStyleId
-        JOIN fishImages fi ON fi.fishId = x.id
-        JOIN fishTypes ft ON ft.id = x.fishTypeId
-        WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'} AND fi.imageType = 1 AND x.disabled = 0 AND x.status = 1
-        ORDER BY x.fishWidth DESC
-    `);
+                (
+                SELECT
+                    o.id,
+                    COALESCE(o.fishWidth, 0.0) as fishWidth,
+                    o.fishTypeId,
+                    o.userId,
+                    o.disabled,
+                    o.status
+                FROM
+                    fishes o
+                INNER JOIN
+                     (SELECT userId, MAX(fishWidth) as fishWidth
+                       FROM fishes WHERE disabled=0 AND \`status\`=1
+                         ${fishTypeId > 0 ? ' AND fishTypeId=' + fishTypeId : ''}
+                         GROUP BY userId ${fishTypeId > 0 ? ', fishTypeId' : ''}) b
+                    ON o.userId = b.userId AND o.fishWidth = b.fishWidth
+                    ORDER BY fishWidth DESC
+                ) x
+            JOIN users u ON u.id = x.userId
+            JOIN profiles p ON p.userId = u.id
+            LEFT JOIN userStyles ust ON ust.id = p.userStyleId
+            LEFT JOIN fishImages fi ON fi.fishId = x.id
+            LEFT JOIN fishTypes ft ON ft.id = x.fishTypeId
+            WHERE fi.imageType = 1
+            ORDER BY x.fishWidth DESC;
+        `);
 
         let myFish = {};
         let myRanking = 0;

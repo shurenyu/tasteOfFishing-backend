@@ -10,7 +10,8 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER(21)
         },
         fishWidth: {
-            type: Sequelize.DOUBLE
+            type: Sequelize.DOUBLE,
+            defaultValue: 0.0,
         },
         status: {
             type: Sequelize.INTEGER(2), //0-pending, 1-accept, 2-reject
