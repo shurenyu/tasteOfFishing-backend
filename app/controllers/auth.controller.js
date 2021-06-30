@@ -10,14 +10,12 @@ const UserStyle = db.userStyle;
 const EmailVerification = db.emailVerification;
 const EmailCertification = db.emailCertification;
 const UserPoint = db.userPoint;
-const PhoneCertification = db.phoneVerification;
 const validateRegisterInput = require("../validations/register.validation");
 const validateLoginInput = require("../validations/login.validation");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const sendMail = require("../utils/email");
 const makeMailFromTemplate = require("../utils/email/mailTemplate");
-const google = require("googleapis");
 const schedule = require('node-schedule');
 const {getSubTokens, sendNotification} = require("../utils/push-notification");
 const {updatePoint} = require("./withdrawal.controller");
@@ -244,8 +242,10 @@ exports.appLogin = async (req, res) => {
                     const token = await generateToken(user);
 
                     // if first login in the day
-                    if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
-                        || new Date().getDate() !== oldUpdated.getDate()) {
+                    const newDate = Math.floor(new Date().getTime() / 86400000);
+                    const oldDate = Math.floor(oldUpdated.getTime() / 86400000);
+
+                    if (newDate !== oldDate) {
                         await updatePoint(user.id, 30, 1, '출석보상');
                         dailyCheck = true;
                     }

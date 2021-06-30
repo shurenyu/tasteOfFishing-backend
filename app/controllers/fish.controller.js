@@ -6,7 +6,6 @@ const Competition = db.competition;
 const UserCompetition = db.userCompetition;
 const FishImage = db.fishImage;
 const User = db.user;
-const UserRecord = db.userRecord;
 const Profile = db.profile;
 const UserStyle = db.userStyle;
 const FishType = db.fishType;
@@ -862,62 +861,6 @@ exports.deleteFishAndUpdateReport = async (req, res) => {
     }
 }
 
-// exports.getRankingRealtime = async (req, res) => {
-//     const fishTypeId = req.body.fishTypeId;
-//     const userId = req.body.userId;
-//
-//     try {
-//         const [winners, metadata] = await db.sequelize.query(`
-//         SELECT
-//             x.id, x.fishWidth as max, x.fishTypeId, x.userId,
-//             u.name AS userName,
-//             ust.name AS userStyle,
-//             ft.name AS fishType,
-//             fi.image as fishImage, fi.imageType as imageType, fi.measureInfo as measureInfo,
-//             p.avatar
-//         FROM
-//             (
-//             SELECT
-//                 o.id,
-//                 o.fishWidth,
-//                 o.fishTypeId,
-//                 o.userId,
-//                 o.disabled,
-//                 o.status
-//             FROM
-//                 fishes o
-//             LEFT JOIN fishes b ON o.userId = b.userId
-//             AND o.fishWidth < b.fishWidth
-//             WHERE b.fishWidth IS NULL
-//             ) x
-//         JOIN users u ON u.id = x.userId
-//         JOIN profiles p ON p.userId = u.id
-//         LEFT JOIN userStyles ust ON ust.id = p.userStyleId
-//         JOIN fishImages fi ON fi.fishId = x.id
-//         JOIN fishTypes ft ON ft.id = x.fishTypeId
-//         WHERE ${fishTypeId > 0 ? 'x.fishTypeId = ' + fishTypeId : 'true'} AND fi.imageType = 1 AND x.disabled = 0 AND x.status = 1
-//         ORDER BY x.fishWidth DESC
-//     `);
-//
-//         let myFish = {};
-//         let myRanking = 0;
-//
-//         for (let i = 0; i < winners.length; i++) {
-//
-//             if (winners[i]['userId'] === userId) {
-//                 myFish = {...winners[i]};
-//                 myRanking = i + 1;
-//             }
-//         }
-//
-//         return res.status(200).send({result: winners, myFish: myFish, myRanking: myRanking});
-//
-//     } catch (err) {
-//         return res.status(500).send({msg: err.toString()});
-//     }
-//
-// }
-
 exports.getRankingRealtime = async (req, res) => {
     const fishTypeId = req.body.fishTypeId;
     const userId = req.body.userId;
@@ -977,6 +920,15 @@ exports.getRankingRealtime = async (req, res) => {
     }
 
 }
+
+// exports.getRankingRealtime = async (req, res) => {
+//     const fishTypeId = req.body.fishTypeId;
+//     const userId = req.body.userId;
+//
+//     const data = await Fish.findAll({
+//
+//     })
+// }
 
 exports.addFishComment = (req, res) => {
     const newComment = {

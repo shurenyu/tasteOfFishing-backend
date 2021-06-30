@@ -10,7 +10,6 @@ const Puesto = db.puestos;
 const AgentPuesto = db.agentPuesto;
 const AppointmentHistory = db.appointmentHistory;
 const Incident = db.incidents;
-const AppContract = db.appsContract;
 const Device = db.devices;
 const Op = db.Sequelize.Op;
 const global = require('../utils/global');

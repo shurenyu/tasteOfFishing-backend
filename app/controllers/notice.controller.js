@@ -2,8 +2,6 @@ const db = require("../models");
 const Notice = db.notice;
 const NoticeType = db.noticeType;
 const UserNotice = db.userNotice;
-const PushToken = db.pushToken;
-const config = require("../config/firebase.config");
 const {sendNotification} = require("../utils/push-notification")
 const {getAllTokens} = require("../utils/push-notification")
 

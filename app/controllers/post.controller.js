@@ -8,7 +8,6 @@ const PostImage = db.postImage;
 const User = db.user;
 const Profile = db.profile;
 const Report = db.report;
-const Op = db.Sequelize.Op;
 
 exports.registerPost = async (req, res) => {
     try {

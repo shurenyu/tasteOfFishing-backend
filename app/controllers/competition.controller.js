@@ -1,5 +1,4 @@
 const db = require("../models");
-const schedule = require('node-schedule');
 const Competition = db.competition;
 const UserCompetition = db.userCompetition;
 const UserApplication = db.userApplication;
