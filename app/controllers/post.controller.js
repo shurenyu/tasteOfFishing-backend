@@ -114,17 +114,17 @@ exports.getPostById = (req, res) => {
             model: PostImage,
         }, {
             model: PostComment,
-            order: [['createdDate', 'DESC']],
-            include: [{
-                model: PostCommentReply,
-            }, {
-                model: User,
-                attributes: ['id', 'name', 'type'],
-                include: [{
-                    model: Profile,
-                    attributes: ['id', 'avatar']
-                }]
-            }]
+            order: [['createdDate', 'ASC']],
+            // include: [{
+            //     model: PostCommentReply,
+            // }, {
+            //     model: User,
+            //     attributes: ['id', 'name', 'type'],
+            //     include: [{
+            //         model: Profile,
+            //         attributes: ['id', 'avatar']
+            //     }]
+            // }]
         }]
     }).then((data) => {
         return res.status(200).send({result: data});

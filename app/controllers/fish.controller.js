@@ -864,6 +864,7 @@ exports.deleteFishAndUpdateReport = async (req, res) => {
 exports.getRankingRealtime = async (req, res) => {
     const fishTypeId = req.body.fishTypeId;
     const userId = req.body.userId;
+    const limit = req.body.limit || 10000;
 
     try {
         const [winners, metadata] = await db.sequelize.query(`
@@ -874,32 +875,15 @@ exports.getRankingRealtime = async (req, res) => {
                 ft.name AS fishType,
                 fi.image as fishImage, fi.imageType as imageType, fi.measureInfo as measureInfo,
                 p.avatar
-            FROM
-                (
-                SELECT
-                    o.id,
-                    COALESCE(o.fishWidth, 0.0) as fishWidth,
-                    o.fishTypeId,
-                    o.userId,
-                    o.disabled,
-                    o.status
-                FROM
-                    fishes o
-                INNER JOIN
-                     (SELECT userId, MAX(fishWidth) as fishWidth
-                       FROM fishes WHERE disabled=0 AND \`status\`=1
-                         ${fishTypeId > 0 ? ' AND fishTypeId=' + fishTypeId : ''}
-                         GROUP BY userId ${fishTypeId > 0 ? ', fishTypeId' : ''}) b
-                    ON o.userId = b.userId AND o.fishWidth = b.fishWidth
-                    ORDER BY fishWidth DESC
-                ) x
+            FROM fishes x
             JOIN users u ON u.id = x.userId
             JOIN profiles p ON p.userId = u.id
             LEFT JOIN userStyles ust ON ust.id = p.userStyleId
             LEFT JOIN fishImages fi ON fi.fishId = x.id
             LEFT JOIN fishTypes ft ON ft.id = x.fishTypeId
-            WHERE fi.imageType = 1
+            WHERE fi.imageType = 1 AND disabled = 0 AND status = 1 ${fishTypeId > 0 ? ' AND fishTypeId=' + fishTypeId : ''}
             ORDER BY x.fishWidth DESC;
+            LIMIT ${limit}
         `);
 
         let myFish = {};
@@ -921,14 +905,6 @@ exports.getRankingRealtime = async (req, res) => {
 
 }
 
-// exports.getRankingRealtime = async (req, res) => {
-//     const fishTypeId = req.body.fishTypeId;
-//     const userId = req.body.userId;
-//
-//     const data = await Fish.findAll({
-//
-//     })
-// }
 
 exports.addFishComment = (req, res) => {
     const newComment = {
