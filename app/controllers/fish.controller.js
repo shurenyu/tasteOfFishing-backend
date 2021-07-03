@@ -882,8 +882,8 @@ exports.getRankingRealtime = async (req, res) => {
             LEFT JOIN fishImages fi ON fi.fishId = x.id
             LEFT JOIN fishTypes ft ON ft.id = x.fishTypeId
             WHERE fi.imageType = 1 AND disabled = 0 AND status = 1 ${fishTypeId > 0 ? ' AND fishTypeId=' + fishTypeId : ''}
-            ORDER BY x.fishWidth DESC;
-            LIMIT ${limit}
+            ORDER BY x.fishWidth DESC
+            LIMIT ${limit};
         `);
 
         let myFish = {};
