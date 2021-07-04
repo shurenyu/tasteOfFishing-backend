@@ -17,7 +17,7 @@ exports.registerReport = (req, res) => {
             type: req.body.type,
             content: req.body.content,
             fishId: req.body.reportObjectId,
-            status: 1,
+            status: 1, // 대기중
             createdDate: new Date(),
             updatedDate: new Date(),
         };
@@ -28,7 +28,7 @@ exports.registerReport = (req, res) => {
             type: req.body.type,
             content: req.body.content,
             postId: req.body.reportObjectId,
-            status: 1,
+            status: 1, // 대기중
             createdDate: new Date(),
             updatedDate: new Date(),
         };

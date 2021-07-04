@@ -102,7 +102,7 @@ exports.getPostByUser = async (req, res) => {
 exports.getPostById = (req, res) => {
     const postId = parseInt(req.body.postId);
     Post.findOne({
-        where: {id: postId, disabled: 0},
+        where: {id: postId},
         include: [{
             model: User,
             attributes: ['id', 'name', 'type'],

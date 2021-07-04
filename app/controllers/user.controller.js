@@ -415,21 +415,43 @@ exports.attendCompetition = async (req, res) => {
             where: {userId: userId},
         });
 
-        if (profile.userStyleId <= 5) {
-            if (attendCount < 1) {
-                profile.userStyleId = 0;
-            } else if (attendCount <= 10) {
-                profile.userStyleId = 1;
-            } else if (attendCount <= 20) {
-                profile.userStyleId = 2;
-            } else if (attendCount <= 50) {
-                profile.userStyleId = 3;
-            } else if (attendCount <= 100) {
-                profile.userStyleId = 4;
-            } else {
-                profile.userStyleId = 5;
+        // if (profile.userStyleId <= 5) {
+        //     if (attendCount < 1) {
+        //         profile.userStyleId = 0;
+        //     } else if (attendCount <= 10) {
+        //         profile.userStyleId = 1;
+        //     } else if (attendCount <= 20) {
+        //         profile.userStyleId = 2;
+        //     } else if (attendCount <= 50) {
+        //         profile.userStyleId = 3;
+        //     } else if (attendCount <= 100) {
+        //         profile.userStyleId = 4;
+        //     } else {
+        //         profile.userStyleId = 5;
+        //     }
+        // }
+
+        const record = await getRecordByUser(userId);
+        const championShipCount = record.rankChampionshipCount + record.questChampionshipCount;
+
+        if (championShipCount === 0) { // 우승회수 0인 회원들만 적용
+            const userStyles = await UserStyle.findAll({
+                order: [['attendLimit', 'DESC']],
+                where: {
+                    attendLimit: {[Op.gt]: 0}
+                }
+            })
+            let userStyleId;
+            for (const item of userStyles) {
+                if (attendCount >= item.attendLimit) {
+                    userStyleId = item.id;
+                    break;
+                }
             }
+
+            profile.userStyleId = userStyleId;
         }
+
         await profile.save();
 
         return res.status(200).send({result: 'SUCCESS_COMPETITION_ATTEND', userInfo: profile});
@@ -468,21 +490,43 @@ exports.cancelCompetition = async (req, res) => {
             where: {userId: userId},
         });
 
-        if (profile.userStyleId <= 5) {
-            if (attendCount < 1) {
-                profile.userStyleId = 0;
-            } else if (attendCount <= 10) {
-                profile.userStyleId = 1;
-            } else if (attendCount <= 20) {
-                profile.userStyleId = 2;
-            } else if (attendCount <= 50) {
-                profile.userStyleId = 3;
-            } else if (attendCount <= 100) {
-                profile.userStyleId = 4;
-            } else {
-                profile.userStyleId = 5;
+        // if (profile.userStyleId <= 5) {
+        //     if (attendCount < 1) {
+        //         profile.userStyleId = 0;
+        //     } else if (attendCount <= 10) {
+        //         profile.userStyleId = 1;
+        //     } else if (attendCount <= 20) {
+        //         profile.userStyleId = 2;
+        //     } else if (attendCount <= 50) {
+        //         profile.userStyleId = 3;
+        //     } else if (attendCount <= 100) {
+        //         profile.userStyleId = 4;
+        //     } else {
+        //         profile.userStyleId = 5;
+        //     }
+        // }
+
+        const record = await getRecordByUser(userId);
+        const championShipCount = record.rankChampionshipCount + record.questChampionshipCount;
+
+        if (championShipCount === 0) { // 우승회수 0인 회원들만 적용
+            const userStyles = await UserStyle.findAll({
+                order: [['attendLimit', 'DESC']],
+                where: {
+                    attendLimit: {[Op.gt]: 0}
+                }
+            })
+            let userStyleId;
+            for (const item of userStyles) {
+                if (attendCount >= item.attendLimit) {
+                    userStyleId = item.id;
+                    break;
+                }
             }
+
+            profile.userStyleId = userStyleId;
         }
+
         await profile.save();
 
         return res.status(200).send({result: 'SUCCESS_COMPETITION_CANCEL', userInfo: profile});
@@ -512,7 +556,7 @@ const getRecordByUser = async (userId) => {
     });
 
     for (const item of myCompetitions) {
-        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) {
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
             if (item.competition && item.competition.mode === 1) {
                 rankDiaryCount += 1;
 

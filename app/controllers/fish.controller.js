@@ -1133,16 +1133,34 @@ exports.rewarding = async (competition) => {
     for (const winner of winners1) {
         const record = await getRecordByUser(winner.userId);
         const championShipCount = record.rankChampionshipCount + record.questChampionshipCount;
+
+        console.log('championShipCount: ', championShipCount);
+
         const profile = await Profile.findOne({
             where: {userId: winner.userId}
         });
-        if (championShipCount >= 10) {
+        /*if (championShipCount >= 10) {
             profile.userStyleId = 8;
         } else if (championShipCount >= 5) {
             profile.userStyleId = 7;
         } else if (championShipCount >= 1) {
             profile.userStyleId = 6;
+        }*/
+        const userStyles = await UserStyle.findAll({
+            order: [['championLimit', 'DESC']],
+            where: {
+                championLimit: {[Op.gt]: 0}
+            }
+        })
+        let userStyleId;
+        for (const item of userStyles) {
+            if (championShipCount >= item.championLimit) {
+                userStyleId = item.id;
+                break;
+            }
         }
+
+        profile.userStyleId = userStyleId;
         await profile.save();
     }
 
@@ -1168,7 +1186,7 @@ const getRecordByUser = async (userId) => {
     });
 
     for (const item of myCompetitions) {
-        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) {
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
             if (item.competition && item.competition.mode === 1) {
                 rankDiaryCount += 1;
 

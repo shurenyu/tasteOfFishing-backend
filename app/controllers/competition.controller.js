@@ -641,7 +641,7 @@ const getRecordByUser = async (userId) => {
     });
 
     for (const item of myCompetitions) {
-        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) {
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
             if (item.competition && item.competition.mode === 1) {
                 rankDiaryCount += 1;
 
