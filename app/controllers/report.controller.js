@@ -8,32 +8,17 @@ const Post = db.post;
 const PostImage = db.postImage;
 
 exports.registerReport = (req, res) => {
-    let newReport = {};
-
-    if (req.body.type === 1) {
-        newReport = {
-            userId: req.body.userId,
-            reporterId: req.body.reporterId,
-            type: req.body.type,
-            content: req.body.content,
-            fishId: req.body.reportObjectId,
-            status: 1, // 대기중
-            createdDate: new Date(),
-            updatedDate: new Date(),
-        };
-    } else {
-        newReport = {
-            userId: req.body.userId,
-            reporterId: req.body.reporterId,
-            type: req.body.type,
-            content: req.body.content,
-            postId: req.body.reportObjectId,
-            status: 1, // 대기중
-            createdDate: new Date(),
-            updatedDate: new Date(),
-        };
-    }
-
+    const newReport = {
+        userId: req.body.userId,
+        reporterId: req.body.reporterId,
+        type: req.body.type,
+        content: req.body.content,
+        postId: req.body.postId,
+        fishId: req.body.fishId,
+        status: 1, // 대기중
+        createdDate: new Date(),
+        updatedDate: new Date(),
+    };
 
     Report.create(newReport)
         .then(data => {
