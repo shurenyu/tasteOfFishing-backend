@@ -59,7 +59,12 @@ const updateRecordAndSendMessage = async (fish, images) => {
                         LIMIT ${competition.rankFishNumber}
                     ) as h
                 `);
-                userCompetition.record1 = record[0]['maxsum'];
+                if (record && record.length > 0) {
+                    userCompetition.record1 = record[0]['maxsum'];
+                } else {
+                    userCompetition.record1 = 0;
+                }
+
                 await userCompetition.save();
 
                 temp = await UserCompetition.findAll({
@@ -772,7 +777,6 @@ exports.updateFish = async (req, res) => {
         const fish = await Fish.findOne({
             where: {
                 id: req.body.fishId,
-                disabled: 0,
             }
         });
 
@@ -1262,7 +1266,13 @@ const updateRecords = async (fish) => {
                         LIMIT ${competition.rankFishNumber}
                     ) as h
                 `);
-                userCompetition.record1 = record[0]['maxsum'];
+
+                if (record && record.length > 0) {
+                    userCompetition.record1 = record[0]['maxsum'];
+                } else {
+                    userCompetition.record1 = 0;
+                }
+
                 await userCompetition.save();
 
             } else if (competition.mode === 2) {
@@ -1284,12 +1294,19 @@ const updateRecords = async (fish) => {
                     }]
                 });
                 console.log('maxfish: ', maxFish[0])
-                userCompetition.record2 = maxFish[0] && maxFish[0].fishWidth || 0;
-                userCompetition.image = maxFish[0] && maxFish[0].fishImages &&
-                    maxFish[0].fishImages.find(x => x.imageType === 1) &&
-                    maxFish[0].fishImages.find(x => x.imageType === 1).image;
+                if (maxFish && maxFish.length > 0) {
+                    userCompetition.record2 = maxFish[0] && maxFish[0].fishWidth || 0;
+                    userCompetition.image = maxFish[0] && maxFish[0].fishImages &&
+                        maxFish[0].fishImages.find(x => x.imageType === 1) &&
+                        maxFish[0].fishImages.find(x => x.imageType === 1).image;
 
-                await userCompetition.save();
+                    await userCompetition.save();
+                } else {
+                    userCompetition.record2 = 0;
+                    userCompetition.image = null;
+                    await userCompetition.save();
+                }
+
 
             } else if (competition.mode === 3) {
 
@@ -1337,13 +1354,20 @@ const updateRecords = async (fish) => {
                     }]
                 })
 
-                userCompetition.record5 = winFish[0].fishWidth;
-                userCompetition.image = winFish[0].fishImages &&
-                    winFish[0].fishImages.find(x => x.imageType === 1) &&
-                    winFish[0].fishImages.find(x => x.imageType === 1).image;
+                console.log('win********', winFish.length)
+                if (winFish && winFish.length > 0) {
+                    console.log('win fish: ', winFish[0].fishWidth)
+                    userCompetition.record5 = winFish[0].fishWidth;
+                    userCompetition.image = winFish[0].fishImages &&
+                        winFish[0].fishImages.find(x => x.imageType === 1) &&
+                        winFish[0].fishImages.find(x => x.imageType === 1).image;
 
-                await userCompetition.save();
-
+                    await userCompetition.save();
+                } else {
+                    userCompetition.record5 = 0;
+                    userCompetition.image = null;
+                    await userCompetition.save();
+                }
             }
         }
 

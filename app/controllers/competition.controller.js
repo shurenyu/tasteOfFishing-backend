@@ -573,7 +573,6 @@ exports.getCompetitionRanking = async (req, res) => {
     }
 };
 
-
 exports.getCompetitionOverview = async (req, res) => {
 
     try {
