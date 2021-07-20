@@ -103,6 +103,7 @@ exports.getPostById = (req, res) => {
     const postId = parseInt(req.body.postId);
     Post.findOne({
         where: {id: postId},
+        // order: [[PostComment, 'createdDate', 'ASC']],
         include: [{
             model: User,
             attributes: ['id', 'name', 'type'],
@@ -114,10 +115,7 @@ exports.getPostById = (req, res) => {
             model: PostImage,
         }, {
             model: PostComment,
-            order: [['createdDate', 'ASC']],
             include: [{
-                model: PostCommentReply,
-            }, {
                 model: User,
                 attributes: ['id', 'name', 'type'],
                 include: [{
