@@ -159,19 +159,35 @@ exports.getProfileByUserId = (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
     try {
+        const searchKey = req.body.searchKey;
+
         const userCount = await User.count({
             where: {
                 type: {[Op.gt]: 0}
             }
         });
 
+        let filter = searchKey && searchKey !== ''
+            ? { // Progressing Contest
+                type: {[Op.gt]: 0},
+                [Op.or]: [{
+                    name: {
+                        [Op.like]: '%' + searchKey + '%'
+                    }
+                }, {
+                    email: {
+                        [Op.like]: '%' + searchKey + '%'
+                    }
+                }]
+            } : {type: {[Op.gt]: 0}};
+
+
+
         const users = await User.findAll({
             limit: req.body.limit || 1000000,
             offset: req.body.offset || 0,
             order: [['createdDate', 'DESC']],
-            where: {
-                type: {[Op.gt]: 0}
-            },
+            where: filter,
             attributes: {exclude: ['password']},
         });
 
@@ -346,6 +362,7 @@ exports.attendCompetition = async (req, res) => {
         const userId = req.body.userId;
         const competitionId = req.body.competitionId;
         const attendPoint = req.body.attendPoint;
+        console.log('contest id: ', competitionId)
 
         const userCompetition = await UserCompetition.findOne({
             where: {
@@ -379,9 +396,6 @@ exports.attendCompetition = async (req, res) => {
         const competition = await Competition.findOne({
             where: {id: competitionId}
         });
-
-        console.log('duplicate: ', competition.duplicateAllow)
-        console.log('attendingContest: ', attendingContest)
 
         if (attendingContest && !competition.duplicateAllow) {
             return res.status(400).send({msg: 'NOT_REPEAT_ATTENDING'});

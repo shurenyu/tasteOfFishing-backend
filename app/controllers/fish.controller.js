@@ -1156,7 +1156,7 @@ exports.rewarding = async (competition) => {
                 championLimit: {[Op.gt]: 0}
             }
         })
-        let userStyleId;
+        let userStyleId = 0;
         for (const item of userStyles) {
             if (championShipCount >= item.championLimit) {
                 userStyleId = item.id;

@@ -55,58 +55,59 @@ exports.registerCompetition = async (req, res) => {
             });
 
             if (!competition) {
+                console.log('clear --------- contest ----------')
                 clearInterval(tmr);
-            }
+            } else {
+                const endDate = new Date(competition.endDate).getTime();
+                const startDate = new Date(competition.startDate).getTime();
 
-            const endDate = new Date(competition.endDate).getTime();
-            const startDate = new Date(competition.startDate).getTime();
+                if (now > endDate + CHECK_INTERVAL) {
+                    clearInterval(tmr);
+                } else if (now > endDate + 1000) {
 
-            if (now > endDate + CHECK_INTERVAL) {
-                clearInterval(tmr);
-            } else if (now > endDate + 1000) {
+                    console.log('the competition finished!!!!!!!!')
+                    await rewarding(competition);
+                    clearInterval(tmr);
 
-                console.log('the competition finished!!!!!!!!')
-                await rewarding(competition);
-                clearInterval(tmr);
+                } else if (now >= endDate - aDay && now < endDate - aDay + CHECK_INTERVAL) {
+                    console.log('ending  ------------------');
 
-            } else if (now >= endDate - aDay && now < endDate - aDay + CHECK_INTERVAL) {
-                console.log('ending  ------------------');
+                    const userCompetition = await UserCompetition.findAll({
+                        where: {competitionId: competition.id}
+                    });
 
-                const userCompetition = await UserCompetition.findAll({
-                    where: {competitionId: competition.id}
-                });
+                    const userIds = [];
+                    for (const item of userCompetition) {
+                        userIds.push(item.userId);
+                    }
 
-                const userIds = [];
-                for (const item of userCompetition) {
-                    userIds.push(item.userId);
+                    console.log('곧 대회가 종료되요!')
+
+                    const registeredTokens = await getSubTokens(userIds);
+                    await sendNotification(registeredTokens,
+                        {message: '곧 대회가 종료되요!',
+                            data: {competitionId: competition.id, message: '곧 대회가 종료되요!'}});
+
+                } else if (now >= startDate - aDay && now < startDate - aDay + CHECK_INTERVAL) {
+                    console.log('starting -----------------')
+
+                    const appliedUsers = await UserApplication.findAll({
+                        where: {competitionId: competition.id}
+                    });
+
+                    const userIds = [];
+                    for (const item of appliedUsers) {
+                        userIds.push(item.userId);
+                    }
+
+                    console.log('곧 대회가 시작되요!')
+
+                    const registeredTokens = await getSubTokens(userIds);
+                    await sendNotification(registeredTokens, {
+                        message: '곧 대회가 시작되요!',
+                        data: {competitionId: competition.id, message: '곧 대회가 시작되요!'}
+                    });
                 }
-
-                console.log('곧 대회가 종료되요!')
-
-                const registeredTokens = await getSubTokens(userIds);
-                await sendNotification(registeredTokens,
-                    {message: '곧 대회가 종료되요!',
-                        data: {competitionId: competition.id, message: '곧 대회가 종료되요!'}});
-
-            } else if (now >= startDate - aDay && now < startDate - aDay + CHECK_INTERVAL) {
-                console.log('starting -----------------')
-
-                const appliedUsers = await UserApplication.findAll({
-                    where: {competitionId: competition.id}
-                });
-
-                const userIds = [];
-                for (const item of appliedUsers) {
-                    userIds.push(item.userId);
-                }
-
-                console.log('곧 대회가 시작되요!')
-
-                const registeredTokens = await getSubTokens(userIds);
-                await sendNotification(registeredTokens, {
-                    message: '곧 대회가 시작되요!',
-                    data: {competitionId: competition.id, message: '곧 대회가 시작되요!'}
-                });
             }
 
         }, CHECK_INTERVAL);

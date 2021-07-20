@@ -242,8 +242,8 @@ exports.appLogin = async (req, res) => {
                     const token = await generateToken(user);
 
                     // if first login in the day
-                    const newDate = Math.floor(new Date().getTime() / 86400000);
-                    const oldDate = Math.floor(oldUpdated.getTime() / 86400000);
+                    const newDate = Math.floor((new Date().getTime() + 9 * 3600000) / 86400000);
+                    const oldDate = Math.floor((oldUpdated.getTime() + 9 * 3600000) / 86400000);
 
                     if (newDate !== oldDate) {
                         await updatePoint(user.id, 30, 1, '출석보상');
