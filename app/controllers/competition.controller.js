@@ -206,7 +206,7 @@ exports.getCompetitionById = async (req, res) => {
             winners = await UserCompetition.findAll({
                 limit: 3,
                 order: order,
-                attributes: ['id', `record${competition.mode}`, 'image'],
+                attributes: ['id', `record${competition.mode}`, 'image', 'ranking'],
                 where: {
                     competitionId: competitionId,
                     // [`record${competition.mode}`]: {
@@ -227,6 +227,39 @@ exports.getCompetitionById = async (req, res) => {
                 }],
                 required: false,
             });
+        }
+
+        let count = 2;
+        let rank = 1;
+
+        if (winners.length > 0) {
+            winners[0].ranking = 1;
+            for (let i = 1; i < winners.length; i++) {
+                switch (competition.mode) {
+                    case 1:
+                        if (winners[i - 1].record1 > winners[i].record1)
+                            rank = count;
+                        break;
+                    case 2:
+                        if (winners[i - 1].record2 > winners[i].record2)
+                            rank = count;
+                        break;
+                    case 3:
+                        if (winners[i - 1].record3 > winners[i].record3)
+                            rank = count;
+                        break;
+                    case 4:
+                        if (winners[i - 1].record4 > winners[i].record4)
+                            rank = count;
+                        break;
+                    case 5:
+                        if (Math.abs(winners[i - 1].record5 - competition.questSpecialWidth) <
+                            Math.abs(winners[i].record5 - competition.questSpecialWidth))
+                            rank = count;
+                }
+                winners[i].ranking = rank;
+                count++;
+            }
         }
 
         const myStatus = await UserCompetition.findOne({
