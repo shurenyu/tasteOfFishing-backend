@@ -286,7 +286,7 @@ exports.appLogin = async (req, res) => {
 
                     const job2 = schedule.scheduleJob(new Date(after7days), async function () {
                         const registeredToken = await getSubTokens(user.id);
-                        return sendNotification(
+                        return sendNotification (
                             [registeredToken], {
                                 message: '낚시의맛을 이용하신지 1주일이 넘었어요!',
                                 data: {home: 1, message: '낚시의맛을 이용하신지 1주일이 넘었어요!'}
@@ -324,6 +324,7 @@ const getUserRecord = async (userId) => {
             model: Competition,
         }]
     });
+
 
     for (const item of myCompetitions) {
         if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
@@ -411,8 +412,10 @@ exports.socialLogin = async (req, res) => {
             await user.save();
 
             // if first login in the day
-            if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
-                || new Date().getDate() !== oldUpdated.getDate()) {
+            const newDate = Math.floor((new Date().getTime() + 9 * 3600000) / 86400000);
+            const oldDate = Math.floor((oldUpdated.getTime() + 9 * 3600000) / 86400000);
+
+            if (newDate !== oldDate) {
                 profile.pointAmount += 30;
                 await profile.save();
 
