@@ -2,8 +2,9 @@ const db = require("../models");
 const Notice = db.notice;
 const NoticeType = db.noticeType;
 const UserNotice = db.userNotice;
+const Profile = db.profile;
 const {sendNotification} = require("../utils/push-notification")
-const {getAllTokens} = require("../utils/push-notification")
+const {getSubTokens} = require("../utils/push-notification")
 
 exports.registerNotice = async (req, res) => {
     const newNotice = {
@@ -17,7 +18,15 @@ exports.registerNotice = async (req, res) => {
         const notice = await Notice.create(newNotice);
         res.status(200).send({result: 'NOTICE_REGISTER_SUCCESS', data: notice});
 
-        const tokens = await getAllTokens();
+        const users = await User.findAll({
+            where: {
+                '$profile.serviceAlarm$': 1
+            },
+            include: [{
+                model: Profile
+            }]
+        })
+        const tokens = await getSubTokens(users.map(x => (x.id)));
 
         return await sendNotification(tokens, {
             message: '공지가 등록되었습니다',

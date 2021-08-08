@@ -265,7 +265,9 @@ exports.appLogin = async (req, res) => {
                     // });
 
                     const userInfo = await User.findOne({
-                        where: {email: req.body.email.toLowerCase()},
+                        where: {
+                            email: req.body.email.toLowerCase()
+                        },
                         attributes: {
                             exclude: ['password'],
                         },
@@ -282,16 +284,18 @@ exports.appLogin = async (req, res) => {
                     res.status(200).json({accessToken: token, userInfo: userInfo, userRecord: userRecord, dailyCheck});
 
                     // push notification after 7 days
-                    const after7days = new Date().getTime() + 7 * 24 * 3600000;
+                    if (userInfo && userInfo.profile && userInfo.profile.serviceAlarm) {
+                        const after7days = new Date().getTime() + 7 * 24 * 3600000;
 
-                    const job2 = schedule.scheduleJob(new Date(after7days), async function () {
-                        const registeredToken = await getSubTokens(user.id);
-                        return sendNotification (
-                            [registeredToken], {
-                                message: '낚시의맛을 이용하신지 1주일이 넘었어요!',
-                                data: {home: 1, message: '낚시의맛을 이용하신지 1주일이 넘었어요!'}
-                            });
-                    });
+                        const job2 = schedule.scheduleJob(new Date(after7days), async function () {
+                            const registeredToken = await getSubTokens(user.id);
+                            return sendNotification (
+                                [registeredToken], {
+                                    message: '낚시의맛을 이용하신지 1주일이 넘었어요!',
+                                    data: {home: 1, message: '낚시의맛을 이용하신지 1주일이 넘었어요!'}
+                                });
+                        });
+                    }
                 } else {
                     res.status(200).json({msg: "AUTH.VALIDATION.PASSWORD_WRONG"});
                 }

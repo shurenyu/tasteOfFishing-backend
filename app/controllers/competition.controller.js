@@ -73,12 +73,20 @@ exports.registerCompetition = async (req, res) => {
                     console.log('ending  ------------------');
 
                     const userCompetition = await UserCompetition.findAll({
-                        where: {competitionId: competition.id}
+                        where: {competitionId: competition.id},
+                        include: [{
+                            model: User,
+                            include: [{
+                                model: Profile
+                            }]
+                        }]
                     });
 
                     const userIds = [];
                     for (const item of userCompetition) {
-                        userIds.push(item.userId);
+                        if (item.user && item.user.profile && item.user.profile.serviceAlarm) {
+                            userIds.push(item.userId);
+                        }
                     }
 
                     console.log('곧 대회가 종료되요!')
@@ -92,12 +100,20 @@ exports.registerCompetition = async (req, res) => {
                     console.log('starting -----------------')
 
                     const appliedUsers = await UserApplication.findAll({
-                        where: {competitionId: competition.id}
+                        where: {competitionId: competition.id},
+                        include: [{
+                            model: User,
+                            include: [{
+                                model: Profile
+                            }]
+                        }]
                     });
 
                     const userIds = [];
                     for (const item of appliedUsers) {
-                        userIds.push(item.userId);
+                        if (item.user && item.user.profile && item.user.profile.serviceAlarm) {
+                            userIds.push(item.userId);
+                        }
                     }
 
                     console.log('곧 대회가 시작되요!')
@@ -545,14 +561,15 @@ exports.getCompetitionRanking = async (req, res) => {
             data = await UserCompetition.findAll({
                 limit: limit || 10000,
                 order: order,
-                attributes: ['id', `record${competition.mode}`, 'image'],
+                attributes: ['id', `record${competition.mode}`, 'image', 'ranking'],
                 where: {
                     competitionId: competitionId,
                     // [`record${competition.mode}`]: {
                     //     [Op.gt]: 0,
                     // },
                 },
-                include: [{
+                include: [
+                    {
                     model: User,
                     attributes: ['id', 'name'],
                     include: [{
@@ -566,10 +583,48 @@ exports.getCompetitionRanking = async (req, res) => {
                 }],
             });
         }
-        const myRanking = data.findIndex(x => x.user.id === req.body.userId);
 
-        return res.status(200).send({result: data, myRanking: myRanking + 1});
+        let count = 2;
+        let rank = 1;
+
+        if (data.length > 0) {
+            data[0].ranking = 1;
+            for (let i = 1; i < data.length; i++) {
+                switch (competition.mode) {
+                    case 1:
+                        if (data[i - 1].record1 > data[i].record1)
+                            rank = count;
+                        break;
+                    case 2:
+                        if (data[i - 1].record2 > data[i].record2)
+                            rank = count;
+                        break;
+                    case 3:
+                        if (data[i - 1].record3 > data[i].record3)
+                            rank = count;
+                        break;
+                    case 4:
+                        if (data[i - 1].record4 > data[i].record4)
+                            rank = count;
+                        break;
+                    case 5:
+                        if (Math.abs(data[i - 1].record5 - competition.questSpecialWidth) <
+                            Math.abs(data[i].record5 - competition.questSpecialWidth))
+                            rank = count;
+                }
+                data[i].ranking = rank;
+                count++;
+            }
+        }
+
+        const my = data.find(x => x.user.id === req.body.userId);
+
+        if ((my === null) || (my === undefined))
+            return res.status(200).send({result: data});
+        else
+            return res.status(200).send({result: data, myRanking: my && my.ranking || 0});
     } catch (err) {
+        console.log(err);
         return res.status(500).send({msg: err.toString()});
     }
 };

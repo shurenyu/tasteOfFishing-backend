@@ -204,9 +204,21 @@ const updateRecordAndSendMessage = async (fish, images) => {
             const temp = await UserCompetition.findAll({
                 where: {
                     competitionId: competition.id
-                }
+                },
+                include: [{
+                    model: User,
+                    include: [{
+                        model: Profile
+                    }]
+                }]
             });
-            const userIds = temp.map(x => x.userId);
+            const userIds = [];
+            for (const item of temp) {
+                if (item.user && item.user.profile && item.user.profile.serviceAlarm) {
+                    userIds.push(item.userId);
+                }
+            }
+            // const userIds = temp.map(x => (x.userId));
 
             const registeredTokens = await getSubTokens(userIds);
             await sendNotification(registeredTokens, {
@@ -483,7 +495,13 @@ exports.registerCheckedFish = async (req, res) => {
                     competitionId: competition.id
                 }
             });
-            const userIds = temp.map(x => x.userId);
+
+            const userIds = [];
+            for (const item of temp) {
+                if (item.user && item.user.profile && item.user.profile.serviceAlarm) {
+                    userIds.push(item.userId);
+                }
+            }
 
             const registeredTokens = await getSubTokens(userIds);
             await sendNotification(registeredTokens, {
@@ -528,7 +546,7 @@ exports.getFishesByUser = (req, res) => {
         userId: req.body.userId,
         competitionId: req.body.competitionId,
         disabled: 0,
-        status: 1,
+        // status: 1,
     };
 
     if (req.body.accepted === 1) {
@@ -923,20 +941,29 @@ exports.addFishComment = (req, res) => {
             res.status(200).send({result: 'DIARY_COMMENT_REGISTER_SUCCESS', data: data});
 
             const fish = await Fish.findOne({
-                where: {id: req.body.fishId, disabled: 0}
+                where: {id: req.body.fishId, disabled: 0},
+                include: [{
+                    model: User,
+                    include: [{
+                        model: Profile
+                    }]
+                }]
             });
             if (!fish) {
                 return res.status(404).send({msg: 'POST_NOT_FOUND'});
             }
-            const registeredToken = await getSubTokens(fish.userId);
 
-            console.log('등록하신 물고기에 댓글이 달렸습니다')
+            if (fish.user && fish.user.profile && fish.user.profile.serviceAlarm) {
+                const registeredToken = await getSubTokens(fish.userId);
 
-            return sendNotification(registeredToken, {
-                message: '등록하신 물고기에 댓글이 달렸습니다',
-                data: {fishId: fish.id, message: '등록하신 물고기에 댓글이 달렸습니다'}
-            });
+                console.log('등록하신 물고기에 댓글이 달렸습니다')
 
+                return sendNotification(registeredToken, {
+                    message: '등록하신 물고기에 댓글이 달렸습니다',
+                    data: {fishId: fish.id, message: '등록하신 물고기에 댓글이 달렸습니다'}
+                });
+            }
+            return false;
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});

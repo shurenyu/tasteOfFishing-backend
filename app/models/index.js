@@ -72,6 +72,7 @@ db.fish.hasMany(db.diaryComment);
 db.diaryComment.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
 db.userCompetition.hasOne(db.competition, {sourceKey: 'competitionId', foreignKey: 'id'});
 db.userCompetition.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
+db.userApplication.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});
 db.notice.hasOne(db.noticeType, {sourceKey: 'noticeTypeId', foreignKey: 'id'});
 db.post.hasMany(db.postImage);
 db.post.hasOne(db.user, {sourceKey: 'userId', foreignKey: 'id'});

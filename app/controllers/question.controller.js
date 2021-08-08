@@ -143,13 +143,21 @@ exports.registerAnswer = async (req, res) => {
         await question.save();
 
         // push notification
-        const registeredToken = await getSubTokens(question.userId);
-        console.log(registeredToken)
+        const user = await User.findOne({
+            where: {id: question.userId},
+            include: [{
+                model: db.profile
+            }]
+        })
+        if (user && user.profile && user.profile.serviceAlarm) {
+            const registeredToken = await getSubTokens(question.userId);
+            console.log(registeredToken)
 
-        await sendNotification(registeredToken, {
-            message: '작성하신 문의에 대한 답변이 완료되었습니다',
-            data: {questionId: questionId, message: '작성하신 문의에 대한 답변이 완료되었습니다'}
-        });
+            await sendNotification(registeredToken, {
+                message: '작성하신 문의에 대한 답변이 완료되었습니다',
+                data: {questionId: questionId, message: '작성하신 문의에 대한 답변이 완료되었습니다'}
+            });
+        }
 
         return res.status(200).send({result: 'QUESTION_ANSWER_ADD_SUCCESS'});
 

@@ -326,19 +326,30 @@ exports.registerPostComment = (req, res) => {
 
             // push notification
             const post = await Post.findOne({
-                where: {id: req.body.postId}
+                where: {id: req.body.postId},
+                include: [{
+                    model: User,
+                    include: [{
+                        model: Profile
+                    }]
+                }]
             });
             if (!post) {
                 return res.status(404).send({msg: 'POST_NOT_FOUND'});
             }
-            const registeredToken = await getSubTokens(post.userId);
 
-            console.log('작성하신 게시물에 댓글이 달렸습니다')
+            if (post.user && post.user.profile && post.user.profile.serviceAlarm) {
+                const registeredToken = await getSubTokens(post.userId);
 
-            return sendNotification(registeredToken, {
-                message: '작성하신 게시물에 댓글이 달렸습니다',
-                data: {postId: post.id, message: '작성하신 게시물에 댓글이 달렸습니다'}
-            });
+                console.log('작성하신 게시물에 댓글이 달렸습니다')
+
+                return sendNotification(registeredToken, {
+                    message: '작성하신 게시물에 댓글이 달렸습니다',
+                    data: {postId: post.id, message: '작성하신 게시물에 댓글이 달렸습니다'}
+                });
+            }
+            return false;
+
         })
         .catch(err => {
             return res.status(500).send({msg: err.toString()});

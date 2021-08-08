@@ -88,13 +88,17 @@ let tmr = setInterval(async function () {
         where: {
             updatedDate: {
                 [Op.lt]: new Date().getTime() - DELTA,
-            }
-        }
+            },
+            '$profile.serviceAlarm$': 1
+        },
+        include: [{
+            model: db.profile,
+        }]
     }).then(async users => {
         const userIds = users.map(x => (x.id));
+        console.log('userIds: ', userIds.includes(69));
 
         const registeredTokens = await getSubTokens(userIds);
-        console.log('tokens: ', registeredTokens);
         await sendNotification(registeredTokens, {
             message: '낚시의맛을 이용하신지 1주일이 넘었어요!',
             data: {home: 1, message: '낚시의맛을 이용하신지 1주일이 넘었어요!'}
@@ -103,6 +107,7 @@ let tmr = setInterval(async function () {
         console.log(err);
     })
 }, CHECK_INTERVAL);
+// }, 3000);
 
 // routes
 require('./app/routes/auth.routes')(app);

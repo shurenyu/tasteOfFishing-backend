@@ -26,6 +26,10 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DOUBLE,
             defaultValue: 0,
         },
+        ranking: {
+            type: Sequelize.INTEGER(11),
+            defaultValue: 0,
+        },
         image: {
             type: Sequelize.STRING(255)
         },
