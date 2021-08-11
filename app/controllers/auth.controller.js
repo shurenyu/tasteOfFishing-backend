@@ -339,7 +339,7 @@ const getUserRecord = async (userId) => {
                     where: {competitionId: item.competition.id}
                 });
 
-                if (item.record1 === maxScore) rankChampionshipCount += 1;
+                if (item.record1 >= maxScore) rankChampionshipCount += 1;
             } else if (item.competition) {
                 questDiaryCount += 1;
 
@@ -354,11 +354,16 @@ const getUserRecord = async (userId) => {
                 } else if (item.competition.mode === 4) {
                     if (item.record4 >= comp.questFishNumber) questChampionshipCount += 1;
                 } else {
-                    const minBias = await UserCompetition.min('record5', {
-                        where: {competitionId: item.competition.id}
-                    });
+                    const norm = comp.questSpecialWidth;
+                    const data = await UserCompetition.findAll({
+                        where: {competitionId: 22},
+                        order: [[db.sequelize.fn('ABS', db.sequelize.literal('record5 - ' + norm)), 'ASC']],
+                        raw: true
+                    })
 
-                    if (item.record5 === minBias) questChampionshipCount += 1;
+                    const minRec = data && data.length > 0 ? Math.abs(data[0].record5 - norm) : null;
+
+                    if (minRec && Math.abs(item.record5 - norm) <= minRec) questChampionshipCount += 1;
                 }
             }
         }
@@ -713,6 +718,7 @@ exports.verifyCodeForEmail = async (req, res) => {
 
 exports.getRecordByUser = async (req, res) => {
     const userId = req.body.userId;
+
     let totalDiaryCount = 0;
     let rankDiaryCount = 0;
     let questDiaryCount = 0;
@@ -743,7 +749,7 @@ exports.getRecordByUser = async (req, res) => {
                     where: {competitionId: item.competition.id}
                 });
 
-                if (item.record1 === maxScore) rankChampionshipCount += 1;
+                if (item.record1 >= maxScore) rankChampionshipCount += 1;
             } else if (item.competition) {
                 questDiaryCount += 1;
 
@@ -758,11 +764,16 @@ exports.getRecordByUser = async (req, res) => {
                 } else if (item.competition.mode === 4) {
                     if (item.record4 >= comp.questFishNumber) questChampionshipCount += 1;
                 } else {
-                    const minBias = await UserCompetition.min('record5', {
-                        where: {competitionId: item.competition.id}
-                    });
+                    const norm = comp.questSpecialWidth;
+                    const data = await UserCompetition.findAll({
+                        where: {competitionId: 22},
+                        order: [[db.sequelize.fn('ABS', db.sequelize.literal('record5 - ' + norm)), 'ASC']],
+                        raw: true
+                    })
 
-                    if (item.record5 === minBias) questChampionshipCount += 1;
+                    const minRec = data && data.length > 0 ? Math.abs(data[0].record5 - norm) : null;
+
+                    if (minRec && Math.abs(item.record5 - norm) <= minRec) questChampionshipCount += 1;
                 }
             }
         }
