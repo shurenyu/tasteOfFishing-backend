@@ -708,3 +708,71 @@ exports.verifyCodeForEmail = async (req, res) => {
         return res.status(500).send({message: err.message});
     }
 };
+
+
+
+exports.getRecordByUser = async (req, res) => {
+    const userId = req.body.userId;
+    let totalDiaryCount = 0;
+    let rankDiaryCount = 0;
+    let questDiaryCount = 0;
+    let rankChampionshipCount = 0;
+    let questChampionshipCount = 0;
+
+    totalDiaryCount = await Fish.count({
+        where: {
+            userId: userId
+        }
+    });
+    console.log('total: ', totalDiaryCount)
+
+    const myCompetitions = await UserCompetition.findAll({
+        where: {userId: userId},
+        include: [{
+            model: Competition,
+        }]
+    });
+
+
+    for (const item of myCompetitions) {
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
+            if (item.competition && item.competition.mode === 1) {
+                rankDiaryCount += 1;
+
+                const maxScore = await UserCompetition.max('record1', {
+                    where: {competitionId: item.competition.id}
+                });
+
+                if (item.record1 === maxScore) rankChampionshipCount += 1;
+            } else if (item.competition) {
+                questDiaryCount += 1;
+
+                const comp = await Competition.findOne({
+                    where: {id: item.competition.id}
+                });
+
+                if (item.competition.mode === 2) {
+                    if (item.record2 >= comp.questFishWidth) questChampionshipCount += 1;
+                } else if (item.competition.mode === 3) {
+                    if (item.record3 >= comp.questFishNumber) questChampionshipCount += 1;
+                } else if (item.competition.mode === 4) {
+                    if (item.record4 >= comp.questFishNumber) questChampionshipCount += 1;
+                } else {
+                    const minBias = await UserCompetition.min('record5', {
+                        where: {competitionId: item.competition.id}
+                    });
+
+                    if (item.record5 === minBias) questChampionshipCount += 1;
+                }
+            }
+        }
+    }
+
+    return res.status(200).json({
+        totalDiaryCount,
+        rankDiaryCount,
+        questDiaryCount,
+        rankChampionshipCount,
+        questChampionshipCount,
+    });
+}

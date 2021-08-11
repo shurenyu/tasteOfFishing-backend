@@ -73,4 +73,9 @@ module.exports = function (app) {
         "/auth/code-for-email/verify",
         controller.verifyCodeForEmail
     )
+
+    app.all(
+        "/user/record/get",
+        controller.getRecordByUser
+    )
 };
