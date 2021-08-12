@@ -2,6 +2,7 @@ const db = require("../models");
 const Notice = db.notice;
 const NoticeType = db.noticeType;
 const UserNotice = db.userNotice;
+const User = db.user;
 const Profile = db.profile;
 const {sendNotification} = require("../utils/push-notification")
 const {getSubTokens} = require("../utils/push-notification")
@@ -27,13 +28,15 @@ exports.registerNotice = async (req, res) => {
             }]
         })
         const tokens = await getSubTokens(users.map(x => (x.id)));
+        console.log('tokens: ', tokens)
 
-        return await sendNotification(tokens, {
-            message: '공지가 등록되었습니다',
-            data: {noticeId: notice.id, message: '공지가 등록되었습니다'}
-        });
+        // return await sendNotification(tokens, {
+        //     message: '공지가 등록되었습니다',
+        //     data: {noticeId: notice.id, message: '공지가 등록되었습니다'}
+        // });
 
     } catch (err) {
+        console.log(err)
         return res.status(500).send({msg: err.toString()});
     }
 };
