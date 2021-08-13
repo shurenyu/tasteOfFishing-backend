@@ -1,6 +1,6 @@
 module.exports = (sequelize, Sequelize) => {
     return sequelize.define("fish", {
-        diaryType: { // 0-낚맛일지, 1-대회일지
+        diaryType: {
             type: Sequelize.INTEGER(4),
             defaultValue: 0,
         },

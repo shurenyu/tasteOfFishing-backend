@@ -222,8 +222,8 @@ const updateRecordAndSendMessage = async (fish, images) => {
 
             const registeredTokens = await getSubTokens(userIds);
             await sendNotification(registeredTokens, {
-                message: '참여중인 대회의 랭킹에 변동이 생겼어요!',
-                data: {rankingId: competition.id, message: '참여중인 대회의 랭킹에 변동이 생겼어요!'}
+                message: 'Changed Rank',
+                data: {rankingId: competition.id, message: 'Changed Rank'}
             });
         }
 
@@ -507,36 +507,11 @@ exports.registerCheckedFish = async (req, res) => {
 
             const registeredTokens = await getSubTokens(userIds);
             await sendNotification(registeredTokens, {
-                message: '참여중인 대회의 랭킹에 변동이 생겼어요!',
-                data: {rankingId: competition.id, message: '참여중인 대회의 랭킹에 변동이 생겼어요!'}
+                message: 'Changed Rank',
+                data: {rankingId: competition.id, message: 'Changed Rank'}
             });
         }
 
-        // /* update the record of UserRecord */
-        //
-        // const record = UserRecord.findOne({
-        //     where: {
-        //         userId: fish.userId,
-        //         fishId: fish.id,
-        //     }
-        // });
-        //
-        // const recordImage = await FishImage.findOne({
-        //     where: {fishId: fish.id}
-        // });
-        //
-        // if (!record) {
-        //     await UserRecord.create({
-        //         userId: fish.userId,
-        //         fishId: fish.id,
-        //         record: fish.fishWidth,
-        //         fishImage: recordImage.image,
-        //     });
-        // } else if (record && record.record < fish.fishWidth) {
-        //     record.record = fish.fishWidth;
-        //     record.fishImage = recordImage.image;
-        //     await record.save();
-        // }
         return 1;
     } catch (err) {
         return res.status(500).send({msg: err.toString()});
@@ -764,7 +739,7 @@ exports.getFishesByMultiFilter = async (req, res) => {
     try {
         const competitionId = req.body.competitionId;
         const status = req.body.status;
-        const order = req.body.order; // 0-날짜순 1-길이순 2-낚맛일지 3-대회일지
+        const order = req.body.order;
         const userId = req.body.userId;
 
         let filter = {};
@@ -974,11 +949,9 @@ exports.addFishComment = (req, res) => {
             if (fish.user && fish.user.profile && fish.user.profile.serviceAlarm) {
                 const registeredToken = await getSubTokens(fish.userId);
 
-                console.log('등록하신 물고기에 댓글이 달렸습니다')
-
                 return sendNotification(registeredToken, {
-                    message: '등록하신 물고기에 댓글이 달렸습니다',
-                    data: {fishId: fish.id, message: '등록하신 물고기에 댓글이 달렸습니다'}
+                    message: 'Comment',
+                    data: {fishId: fish.id, message: 'Comment'}
                 });
             }
             return false;
@@ -1070,7 +1043,7 @@ const giveReward = async (userId, amount) => {
     console.log(userId, amount)
 
     try {
-        await updatePoint(userId, parseInt(amount), 1, '대회상금');
+        await updatePoint(userId, parseInt(amount), 1, 'Reward');
         return 1;
     } catch (err) {
         return 0;
@@ -1235,7 +1208,7 @@ const getRecordByUser = async (userId) => {
     });
 
     for (const item of myCompetitions) {
-        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { 
             if (item.competition && item.competition.mode === 1) {
                 rankDiaryCount += 1;
 
@@ -1430,7 +1403,7 @@ const updateRecords = async (fish) => {
 
 
 // ============================================================================//
-//                                 추가건                                       //
+//                                 Additional                                  //
 // ============================================================================//
 
 exports.registerDiary = async (req, res) => {

@@ -17,7 +17,7 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER(21),
             defaultValue: 0,
         },
-        status: { // 1-대기중, 2-처리완료
+        status: {
             type: Sequelize.INTEGER(4)
         },
         type: {

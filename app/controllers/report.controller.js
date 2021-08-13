@@ -15,7 +15,7 @@ exports.registerReport = (req, res) => {
         content: req.body.content,
         postId: req.body.postId,
         fishId: req.body.fishId,
-        status: 1, // 대기중
+        status: 1, 
         createdDate: new Date(),
         updatedDate: new Date(),
     };

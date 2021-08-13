@@ -22,7 +22,7 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING(30)
         },
         status: {
-            type: Sequelize.INTEGER(2), // 0-대기중, 1-성공, 2-실패
+            type: Sequelize.INTEGER(2),
             defaultValue: 0
         },
         createdDate: {

@@ -78,7 +78,7 @@ exports.applyWithdrawal = async (req, res) => {
         };
 
         const response = await Withdrawal.create(data);
-        const result = await updatePointAmount(req.body.userId, req.body.pointAmount, 0, '출금');
+        const result = await updatePointAmount(req.body.userId, req.body.pointAmount, 0, 'Withdraw');
         if (result === 'NOT_ENOUGH_POINT') {
             return res.status(200).send({msg: 'NOT_ENOUGH_POINT'});
         }
@@ -158,7 +158,7 @@ exports.cancelWithdrawal = async (req, res) => {
             return res.status(200).send({msg: 'WITHDRAWAL_FINISHED'});
         }
 
-        await updatePointAmount(req.body.userId, req.body.pointAmount, 1, '출금취소');
+        await updatePointAmount(req.body.userId, req.body.pointAmount, 1, 'Cancel withdraw');
 
         await Withdrawal.destroy({
             where: {
@@ -195,7 +195,7 @@ exports.finishWithdrawal = async (req, res) => {
         if (withdrawal.status === 0) {
             await updateWithdrawalStatus(withdrawalId, status);
             if (status > 1) {
-                await updatePointAmount(withdrawal.userId, withdrawal.pointAmount, 1, '출금취소');
+                await updatePointAmount(withdrawal.userId, withdrawal.pointAmount, 1, 'Cancel Withdraw');
             }
         }
 

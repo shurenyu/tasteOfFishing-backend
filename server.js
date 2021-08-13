@@ -35,7 +35,6 @@ const db = require("./app/models");
 const Op = db.Sequelize.Op;
 
 db.sequelize.sync().then(res => {
-    // db.sequelize.sync({alter: true});
     db.sequelize.sync();
 });
 
@@ -44,40 +43,6 @@ app.get("/", (req, res) => {
     res.json({msg: ["Welcome to fishing app"]});
 });
 
-// const now = new Date().getTime()
-// const CHECK_INTERVAL = 60000;
-//
-// db.competition.findAll({
-//     where: {
-//         endDate: {
-//             [Op.gt]: now
-//         }
-//     }
-// }).then(data => {
-//     console.log('ee:', data.length)
-//     for (const competition of data) {
-//         let tmr = setInterval(async function () {
-//             const endDate = new Date(competition.endDate).getTime();
-//             const startDate = new Date(competition.startDate).getTime();
-//
-//             if (now > endDate + 1000) {
-//                 console.log('the competition finished!!!!!!!!')
-//                 await rewarding(competition);
-//                 clearInterval(tmr);
-//
-//             } else if (endDate - now < CHECK_INTERVAL) {
-//                 console.log('competition will be finished within 1 min !!!');
-//
-//                 const job = schedule.scheduleJob(endDate, async function () {
-//                     await rewarding(competition);
-//                     clearInterval(tmr);
-//                 })
-//             }
-//         }, CHECK_INTERVAL)
-//     }
-// })
-
-// const CHECK_INTERVAL = 24 * 3600000;
 const CHECK_INTERVAL = 24 * 3600000;
 const DELTA = 7 * 24 * 3600000;
 
@@ -100,14 +65,13 @@ let tmr = setInterval(async function () {
 
         const registeredTokens = await getSubTokens(userIds);
         await sendNotification(registeredTokens, {
-            message: '낚시의맛을 이용하신지 1주일이 넘었어요!',
-            data: {home: 1, message: '낚시의맛을 이용하신지 1주일이 넘었어요!'}
+            message: 'You used Taste of fising app for a week',
+            data: {home: 1, message: 'You used Taste of fising app for a week'}
         });
     }).catch(err => {
         console.log(err);
     })
 }, CHECK_INTERVAL);
-// }, 3000);
 
 // routes
 require('./app/routes/auth.routes')(app);

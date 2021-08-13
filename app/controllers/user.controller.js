@@ -41,7 +41,7 @@ exports.registerProfile = async (req, res) => {
 
         await UserPoint.create({
             userId: user.id,
-            content: '출석보상',
+            content: 'Reward Login',
             point: 30,
             createdDate: new Date(),
         });
@@ -324,7 +324,7 @@ exports.applyCompetition = async (req, res) => {
 
         if (attendPoint > 0) {
             // update the pointAmount, level, exp, and style
-            await updatePoint(userId, attendPoint, 0, '대회접수');
+            await updatePoint(userId, attendPoint, 0, 'Accept Contest');
         }
         // profile.exp += 150;
         // profile.level = Math.floor(profile.exp / 1000);
@@ -347,7 +347,7 @@ exports.applyCompetition = async (req, res) => {
         // }
         // await profile.save();
 
-        if (attendPoint > 0) { //접수했을 때 EXP수정할 경우 이 코드를 실행하여 결과값을 반환한다.
+        if (attendPoint > 0) {
             profile.pointAmount -= attendPoint;
         }
 
@@ -419,7 +419,7 @@ exports.attendCompetition = async (req, res) => {
 
         if (attendPoint > 0) {
             // update the pointAmount, level, exp, and style
-            await updatePoint(userId, attendPoint, 0, '대회참여');
+            await updatePoint(userId, attendPoint, 0, 'Attending');
             profile.pointAmount -= attendPoint;
         }
 
@@ -448,7 +448,7 @@ exports.attendCompetition = async (req, res) => {
         const record = await getRecordByUser(userId);
         const championShipCount = record.rankChampionshipCount + record.questChampionshipCount;
 
-        if (championShipCount === 0) { // 우승회수 0인 회원들만 적용
+        if (championShipCount === 0) {
             const userStyles = await UserStyle.findAll({
                 order: [['attendLimit', 'DESC']],
                 where: {
@@ -523,7 +523,7 @@ exports.cancelCompetition = async (req, res) => {
         const record = await getRecordByUser(userId);
         const championShipCount = record.rankChampionshipCount + record.questChampionshipCount;
 
-        if (championShipCount === 0) { // 우승회수 0인 회원들만 적용
+        if (championShipCount === 0) {
             const userStyles = await UserStyle.findAll({
                 order: [['attendLimit', 'DESC']],
                 where: {
@@ -570,7 +570,7 @@ const getRecordByUser = async (userId) => {
     });
 
     for (const item of myCompetitions) {
-        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) {
             if (item.competition && item.competition.mode === 1) {
                 rankDiaryCount += 1;
 
@@ -672,7 +672,7 @@ exports.updateUserPoint = async (req, res) => {
 
         const userPoint = await UserPoint.create({
             userId: userId,
-            content: '관리자 수정',
+            content: 'Admin Change',
             point: pointAmount,
             originPoint: originPoint,
             createdDate: new Date()
@@ -687,7 +687,6 @@ exports.updateUserPoint = async (req, res) => {
 
 const Test = db.test
 exports.testing = async (req, res) => {
-    console.log("***********************")
     try {
         // const rank = db.Sequelize.literal('(RANK() OVER (ORDER BY point DESC))');
         // const data = await Test.findAll({

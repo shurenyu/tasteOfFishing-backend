@@ -89,12 +89,10 @@ exports.registerCompetition = async (req, res) => {
                         }
                     }
 
-                    console.log('곧 대회가 종료되요!')
-
                     const registeredTokens = await getSubTokens(userIds);
                     await sendNotification(registeredTokens,
-                        {message: '곧 대회가 종료되요!',
-                            data: {competitionId: competition.id, message: '곧 대회가 종료되요!'}});
+                        {message: 'Ending soon!',
+                            data: {competitionId: competition.id, message: 'Ending soon!'}});
 
                 } else if (now >= startDate - aDay && now < startDate - aDay + CHECK_INTERVAL) {
                     console.log('starting -----------------')
@@ -116,12 +114,12 @@ exports.registerCompetition = async (req, res) => {
                         }
                     }
 
-                    console.log('곧 대회가 시작되요!')
+                    console.log('Starting soon!')
 
                     const registeredTokens = await getSubTokens(userIds);
                     await sendNotification(registeredTokens, {
-                        message: '곧 대회가 시작되요!',
-                        data: {competitionId: competition.id, message: '곧 대회가 시작되요!'}
+                        message: 'Starting soon!',
+                        data: {competitionId: competition.id, message: 'Starting soon!'}
                     });
                 }
             }
@@ -729,7 +727,7 @@ const getRecordByUser = async (userId) => {
     });
 
     for (const item of myCompetitions) {
-        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { 
             if (item.competition && item.competition.mode === 1) {
                 rankDiaryCount += 1;
 

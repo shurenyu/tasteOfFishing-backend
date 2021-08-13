@@ -79,9 +79,9 @@ const sendCode = async (user, res) => {
         user.id,
         'Sent the code for email verification',
         makeMailFromTemplate({
-            header: `안녕하세요, 낚시의 맛 입니다.`,
-            title: '인증코드전송',
-            content: '이메일 인증을 위해 아래의 인증코드를 입력해주세요.',
+            header: `Hello`,
+            title: 'Send the verify code',
+            content: 'Please input the below verification code',
             value: verifyCode,
             extra: '',
         })
@@ -110,7 +110,7 @@ exports.adminRegister = async (req, res) => {
         const newUser = {
             name: req.body.name,
             email: req.body.email.toLowerCase(),
-            type: req.body.type, // 0- 관리자, 1-일반유저, 2-구글로그인유저, 3-페이스북로그인유저
+            type: req.body.type,
             active: false,
             createdDate: new Date(),
         };
@@ -158,7 +158,7 @@ exports.register = async (req, res) => {
         const newUser = {
             name: req.body.name,
             email: req.body.email.toLowerCase(),
-            type: req.body.type, // 0- 관리자, 1-일반유저, 2-구글로그인유저, 3-페이스북로그인유저
+            type: req.body.type,
             createdDate: new Date(),
         };
 
@@ -168,7 +168,6 @@ exports.register = async (req, res) => {
                 newUser.password = hash;
                 User.create(newUser)
                     .then(async user => {
-                        // await sendCode(user, res);
                         const device = req.body.device || '';
                         const token = await generateToken(user);
 
@@ -246,23 +245,9 @@ exports.appLogin = async (req, res) => {
                     const oldDate = Math.floor((oldUpdated.getTime() + 9 * 3600000) / 86400000);
 
                     if (newDate !== oldDate) {
-                        await updatePoint(user.id, 30, 1, '출석보상');
+                        await updatePoint(user.id, 30, 1, 'Reward Login');
                         dailyCheck = true;
                     }
-
-                    // added 30 point after 10 min
-                    // const after10min = new Date().getTime() + 10 * 60000;
-                    //
-                    // const job1 = schedule.scheduleJob(new Date(after10min), async function () {
-                    //     if (new Date().getTime() - oldUpdated.getTime() > 24 * 3600000
-                    //         || new Date().getDate() !== oldUpdated.getDate())
-                    //     {
-                    //
-                    //         await updatePoint(user.id, 30, 1, '출석보상');
-                    //         const registeredToken = await getSubTokens(generalInfo.id);
-                    //         sendNotification([registeredToken], {message: '출석보상 30P입금!', home: 3});
-                    //     }
-                    // });
 
                     const userInfo = await User.findOne({
                         where: {
@@ -291,8 +276,8 @@ exports.appLogin = async (req, res) => {
                             const registeredToken = await getSubTokens(user.id);
                             return sendNotification (
                                 [registeredToken], {
-                                    message: '낚시의맛을 이용하신지 1주일이 넘었어요!',
-                                    data: {home: 1, message: '낚시의맛을 이용하신지 1주일이 넘었어요!'}
+                                    message: 'You used Taste of fising app for a week',
+                                    data: {home: 1, message: 'You used Taste of fising app for a week'}
                                 });
                         });
                     }
@@ -304,6 +289,7 @@ exports.appLogin = async (req, res) => {
             res.status(200).json({msg: "AUTH.VALIDATION.EMAIL_NOT_FOUND"});
         }
     } catch (err) {
+        console.log(err)
         return res.status(500).json({msg: err.toString()})
     }
 };
@@ -331,7 +317,7 @@ const getUserRecord = async (userId) => {
 
 
     for (const item of myCompetitions) {
-        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) {
             if (item.competition && item.competition.mode === 1) {
                 rankDiaryCount += 1;
 
@@ -434,7 +420,7 @@ exports.socialLogin = async (req, res) => {
 
                 await UserPoint.create({
                     userId: user.id,
-                    content: '출석보상',
+                    content: 'Reward Login',
                     point: 30,
                     createdDate: new Date(),
                 });
@@ -675,9 +661,9 @@ exports.verifyEmail = async (req, res) => {
         userId,
         'Email Certification',
         makeMailFromTemplate({
-            header: `안녕하세요. 낚시의 맛 입니다.`,
-            title: '인증코드전송',
-            content: '이메일인증을 위해 아래의 인증코드를 입력해주세요.',
+            header: `Hello`,
+            title: 'Verification code',
+            content: 'Please input the verification code.',
             value: code,
             extra: '',
         })
@@ -745,7 +731,7 @@ exports.getRecordByUser = async (req, res) => {
 
 
     for (const item of myCompetitions) {
-        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) { // 종료된 대회들만 검색
+        if (new Date(item.competition.endDate).getTime() < new Date().getTime()) {
             if (item.competition && item.competition.mode === 1) {
                 rankDiaryCount += 1;
 
