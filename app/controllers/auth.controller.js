@@ -388,6 +388,10 @@ const getUserRecord = async (userId) => {
 exports.socialLogin = async (req, res) => {
     console.log("socialLogin", req.body)
     try {
+        if (!req.body.email || req.body.email === '') {
+            return res.status(200).json({msg: "EMAIL_NOT_FOUND"});
+        }
+
         let user = await User.findOne({
             where: {
                 email: req.body.email,
