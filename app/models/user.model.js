@@ -1,6 +1,6 @@
 module.exports = (sequelize, Sequelize) => {
     return sequelize.define("user", {
-        type: {
+        type: { // 0-admin 1-email-login 2-google login 3-facebook login
             type: Sequelize.INTEGER(2)
         },
         name: {

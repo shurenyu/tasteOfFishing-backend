@@ -1,5 +1,12 @@
 module.exports = (sequelize, Sequelize) => {
     return sequelize.define("fish", {
+        diaryType: { // 0-낚맛일지, 1-대회일지
+            type: Sequelize.INTEGER(4),
+            defaultValue: 0,
+        },
+        title: {
+            type: Sequelize.STRING(255),
+        },
         userId: {
             type: Sequelize.INTEGER(21)
         },

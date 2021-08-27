@@ -119,5 +119,12 @@ module.exports = function (app) {
         controller.getMyDiaryInfo
     );
 
+    //==============================================================//
+
+    app.all(
+        "/diary/register",
+        [authJwt.verifyToken],
+        controller.registerDiary
+    );
 
 };

@@ -235,6 +235,7 @@ const updateRecordAndSendMessage = async (fish, images) => {
 
 exports.commitFish = async (req, res) => {
     const newFish = {
+        diaryType: 1,
         userId: req.body.userId,
         competitionId: req.body.competitionId,
         fishWidth: req.body.fishWidth.toFixed(2),
@@ -746,7 +747,7 @@ exports.getFishesByMultiFilter = async (req, res) => {
     try {
         const competitionId = req.body.competitionId;
         const status = req.body.status;
-        const order = req.body.order;
+        const order = req.body.order; // 0-날짜순 1-길이순 2-낚맛일지 3-대회일지
         const userId = req.body.userId;
 
         let filter = {};
@@ -754,6 +755,8 @@ exports.getFishesByMultiFilter = async (req, res) => {
         if (competitionId) filter.competitionId = competitionId;
         if (status) filter.status = status;
         if (userId) filter.userId = userId;
+        if (order && order === 2) filter.diaryType = 0;
+        if (order && order === 3) filter.diaryType = 1;
 
         const orderList = order === 0 ? [['registerDate', 'DESC']] : [['fishWidth', 'DESC']]
 
@@ -1405,5 +1408,43 @@ const updateRecords = async (fish) => {
     } catch (err) {
         console.log(err)
         return 0;
+    }
+}
+
+
+// ============================================================================//
+//                                 추가건                                       //
+// ============================================================================//
+
+exports.registerDiary = async (req, res) => {
+    try {
+        const fish = await Fish.create({
+            diaryType: 0,
+            userId: req.body.userId,
+            title: req.body.title || '',
+            fishWidth: req.body.fishWidth.toFixed(2),
+            fishTypeId: req.body.fishTypeId,
+            latitude: req.body.latitude,
+            longitude: req.body.longitude,
+            status: 1,
+            registerDate: new Date(),
+        });
+
+        const fishImages = req.body.fishImages || [];
+
+        let data = [];
+        for (const item of fishImages) {
+            data.push({
+                fishId: fish.id,
+                image: item.image,
+                imageType: item.imageType,
+                measureInfo: item.measureInfo,
+            })
+        }
+        await FishImage.bulkCreate(data, {returning: true});
+
+        return res.status(200).send({result: 'DIARY_REGISTER_SUCCESS'});
+    } catch(err) {
+        return res.status(500).send({msg: err.toString()});
     }
 }
