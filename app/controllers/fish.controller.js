@@ -234,18 +234,6 @@ const updateRecordAndSendMessage = async (fish, images) => {
 }
 
 exports.commitFish = async (req, res) => {
-    const newFish = {
-        diaryType: 1,
-        userId: req.body.userId,
-        competitionId: req.body.competitionId,
-        fishWidth: req.body.fishWidth.toFixed(2),
-        fishTypeId: req.body.fishTypeId,
-        latitude: req.body.latitude,
-        longitude: req.body.longitude,
-        status: 1,
-        registerDate: new Date(),
-    };
-
     // can submit the fish during only competition
     const competition = await Competition.findOne({
         where: {
@@ -259,6 +247,19 @@ exports.commitFish = async (req, res) => {
 
     if (competition) {
         try {
+            const newFish = {
+                diaryType: 1,
+                title: competition.name,
+                userId: req.body.userId,
+                competitionId: req.body.competitionId,
+                fishWidth: req.body.fishWidth.toFixed(2),
+                fishTypeId: req.body.fishTypeId,
+                latitude: req.body.latitude,
+                longitude: req.body.longitude,
+                status: 1,
+                registerDate: new Date(),
+            };
+        
             const fish = await Fish.create(newFish);
 
             const fishImages = req.body.fishImages;
@@ -611,25 +612,36 @@ exports.getDiariesByUser = (req, res) => {
 };
 
 exports.searchDiary = (req, res) => {
-    const userId = req.body.userId;
-    let filter = {};
-    if (req.body.keyword) {
+    const userId = req.body.userId || 0;
+    const keyword = req.body.keyword || '';
+    const sortKey = req.body.sortKey || 0;
+    console.log(req.body)
+
+    let filter = {
+        userId: userId,
+        status: 1,
+        disabled: 0,
+    };
+
+    if (keyword) {
         filter = {
-            name: {
-                [Op.like]: '%' + req.body.keyword + '%'
-            }
+            ...filter,
+            title: {[Op.like]: '%' + keyword + '%'}
+            // [Op.or]: [
+                // {title: {[Op.like]: '%' + keyword + '%'}},
+                // {'$competition.name$': {[Op.like]: '%' + keyword + '%'}}
+            // ]
         };
     }
+
+    if (sortKey === 2) filter.diaryType = 0;
+    if (sortKey === 3) filter.diaryType = 1;
 
     Fish.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
-        order: [['fishWidth', 'DESC'], [FishImage, 'imageType', 'ASC']],
-        where: {
-            userId: userId,
-            status: 1,
-            disabled: 0,
-        },
+        order: [[sortKey === 1 ? 'fishWidth' : 'registerDate', 'DESC'], [FishImage, 'imageType', 'ASC']],
+        where: filter,
         include: [{
             model: FishType,
             attributes: ['id', 'name']
@@ -640,7 +652,7 @@ exports.searchDiary = (req, res) => {
         }, {
             model: Competition,
             attributes: ['id', 'name'],
-            where: filter,
+            required: false
         }]
     }).then((data) => {
         return res.status(200).send({result: data});
