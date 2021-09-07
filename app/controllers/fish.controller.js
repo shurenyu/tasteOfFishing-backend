@@ -574,6 +574,7 @@ exports.getFishesByUser = (req, res) => {
             attributes: ['id', 'name']
         }]
     }).then((data) => {
+        // const totalCount = await Fish.count({where: {userId: req.body.userId}});
         return res.status(200).send({result: data});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
@@ -581,8 +582,8 @@ exports.getFishesByUser = (req, res) => {
 };
 
 exports.getDiariesByUser = (req, res) => {
-    const userId = req.body.userId;
-    const sortKey = req.body.sortKey; // 0-by date, 1-by width
+    const userId = req.body.userId || 0;
+    const sortKey = req.body.sortKey || 0; // 0-by date, 1-by width
 
     Fish.findAll({
         limit: req.body.limit || 1000000,
@@ -604,8 +605,9 @@ exports.getDiariesByUser = (req, res) => {
             model: Competition,
             attributes: ['id', 'name']
         }]
-    }).then((data) => {
-        return res.status(200).send({result: data});
+    }).then(async (data) => {
+        const totalCount = await Fish.count({where: {userId: userId}});
+        return res.status(200).send({result: data, totalCount: totalCount});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
     })
