@@ -583,15 +583,18 @@ exports.getFishesByUser = (req, res) => {
 
 exports.getDiariesByUser = (req, res) => {
     const userId = req.body.userId || 0;
-    const sortKey = req.body.sortKey || 0; // 0-by date, 1-by width
+    const sortKey = req.body.sortKey || 0; // 0-by date, 1-by width, 2-fishing taste diray, 3-competition diray
+    let filter = {
+        userId: userId
+    };
+    if (sortKey === 2) filter.diaryType = 0;
+    if (sortKey === 3) filter.diaryType = 1;
 
     Fish.findAll({
         limit: req.body.limit || 1000000,
         offset: req.body.offset || 0,
         order: [[sortKey === 1 ? 'fishWidth' : 'registerDate', 'DESC'], [FishImage, 'imageType', 'ASC']],
-        where: {
-            userId: userId,
-        },
+        where: filter,
         include: [{
             model: FishType,
             attributes: ['id', 'name']
