@@ -609,7 +609,7 @@ exports.getDiariesByUser = (req, res) => {
             attributes: ['id', 'name']
         }]
     }).then(async (data) => {
-        const totalCount = await Fish.count({where: {userId: userId}});
+        const totalCount = await Fish.count({where: {userId: userId, diaryType: 0}});
         return res.status(200).send({result: data, totalCount: totalCount});
     }).catch(err => {
         return res.status(500).send({msg: err.toString()});
